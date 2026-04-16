@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -47,8 +48,8 @@ export default function AdminLoginPage() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-4xl font-bold text-sky-600">M</span>
+          <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg relative p-2">
+            <Image src="/logo.png" alt="MAX Limpieza Logo" fill className="object-contain p-2" />
           </div>
           <h1 className="text-3xl font-bold text-white">MAX Limpieza</h1>
           <p className="text-sky-100 mt-2">Panel Administrativo</p>
@@ -75,7 +76,7 @@ export default function AdminLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="input-field"
-                placeholder="admin@maxlimpieza.com"
+                placeholder="tu@email.com"
               />
             </div>
 
@@ -101,12 +102,6 @@ export default function AdminLoginPage() {
               {loading ? 'Ingresando...' : 'Ingresar'}
             </button>
           </form>
-
-          <div className="mt-6 p-4 bg-sky-50 rounded-lg">
-            <p className="text-sm text-sky-800">
-              <strong>Demo:</strong> Email: admin@maxlimpieza.com | Contraseña: admin123
-            </p>
-          </div>
         </div>
       </div>
     </div>
