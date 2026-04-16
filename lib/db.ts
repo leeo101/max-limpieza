@@ -3,7 +3,10 @@ import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
 
-const dbPath = path.join(process.cwd(), 'data', 'max-limpieza.db');
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+const dbPath = isVercel 
+  ? path.join('/tmp', 'max-limpieza.db') 
+  : path.join(process.cwd(), 'data', 'max-limpieza.db');
 
 // Ensure data directory exists
 const dataDir = path.dirname(dbPath);
