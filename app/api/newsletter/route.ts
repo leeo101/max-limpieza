@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already subscribed
-    const existing = db.prepare('SELECT id FROM newsletter_subscribers WHERE email = ?').get(email);
+    const existings = await db`SELECT id FROM newsletter_subscribers WHERE email = ${email}`;
+    const existing = existings[0];
     if (existing) {
       return NextResponse.json(
         { success: false, message: 'Este email ya esta suscrito' },
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Insert subscriber
     const id = randomUUID();
-    db.prepare('INSERT INTO newsletter_subscribers (id, email) VALUES (?, ?)').run(id, email);
+    await db`INSERT INTO newsletter_subscribers (id, email) VALUES (${id}, ${email})`;
 
     return NextResponse.json(
       { success: true, message: 'Suscripcion exitosa' },

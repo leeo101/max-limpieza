@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = registerCustomer({
+    const result = await registerCustomer({
       email,
       password,
       name,

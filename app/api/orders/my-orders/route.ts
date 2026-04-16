@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import db from '@/lib/db';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get('authorization');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'No autorizado' },
@@ -13,29 +14,26 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const user = verifyToken(token);
 
-    if (!decoded) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Token inválido' },
         { status: 401 }
       );
     }
 
-    // Get user's orders from database
-    const orders = db.prepare(`
-      SELECT id, customer_name, customer_phone, customer_email, customer_address, 
-             customer_notes, delivery_method, total, status, items, created_at, updated_at
+    const orders = await db`
+      SELECT id, total, status, created_at, items, delivery_method 
       FROM orders 
-      WHERE user_id = ? 
+      WHERE user_id = ${user.id} 
       ORDER BY created_at DESC
-    `).all(decoded.id);
+    `;
 
     return NextResponse.json({ orders });
   } catch (error) {
-    console.error('Error getting user orders:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Error al obtener pedidos' },
       { status: 500 }
     );
   }

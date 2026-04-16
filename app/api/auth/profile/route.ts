@@ -1,29 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { verifyToken, updateUserProfile } from '@/lib/auth';
 import db from '@/lib/db';
 
-interface User {
-  id: string;
-  email: string;
-  role: string;
-  name: string | null;
-  phone: string | null;
-  address: string | null;
-  city: string | null;
-  postal_code: string | null;
-  points: number;
-  email_verified: number;
-  active: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get('authorization');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'No autorizado' },
+        { success: false, error: 'No autorizado - Token omitido' },
         { status: 401 }
       );
     }
@@ -33,39 +18,37 @@ export async function GET(request: NextRequest) {
 
     if (!decoded) {
       return NextResponse.json(
-        { error: 'Token inválido' },
+        { success: false, error: 'No autorizado - Token inválido' },
         { status: 401 }
       );
     }
 
-    // Get user from database (without password)
-    const user = db.prepare(
-      'SELECT id, email, role, name, phone, address, city, postal_code, points, email_verified, active, created_at, updated_at FROM users WHERE id = ?'
-    ).get(decoded.id) as User | null;
+    const users = await db`SELECT id, email, role, name, phone, address, city, postal_code, points, email_verified, created_at FROM users WHERE id = ${decoded.id}`;
+    const user = users[0];
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Usuario no encontrado' },
+        { success: false, error: 'Usuario no encontrado' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ success: true, data: user });
   } catch (error) {
-    console.error('Error getting user profile:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { success: false, error: 'Error del servidor' },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(request: Request) {
   try {
     const authHeader = request.headers.get('authorization');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'No autorizado' },
+        { success: false, error: 'No autorizado - Token omitido' },
         { status: 401 }
       );
     }
@@ -75,7 +58,7 @@ export async function PUT(request: NextRequest) {
 
     if (!decoded) {
       return NextResponse.json(
-        { error: 'Token inválido' },
+        { success: false, error: 'No autorizado - Token inválido' },
         { status: 401 }
       );
     }
@@ -83,34 +66,32 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { name, phone, address, city, postal_code } = body;
 
-    const success = updateUserProfile(decoded.id, {
+    const success = await updateUserProfile(decoded.id, {
       name,
       phone,
       address,
       city,
-      postal_code,
+      postal_code
     });
 
     if (!success) {
       return NextResponse.json(
-        { error: 'Error al actualizar el perfil' },
-        { status: 500 }
+        { success: false, error: 'Error al actualizar el perfil' },
+        { status: 400 }
       );
     }
 
-    // Get updated user
-    const user = db.prepare(
-      'SELECT id, email, role, name, phone, address, city, postal_code, points, email_verified, active, created_at, updated_at FROM users WHERE id = ?'
-    ).get(decoded.id) as User | null;
+    const users = await db`SELECT id, role FROM users WHERE id = ${decoded.id}`;
+    const user = users[0];
 
-    return NextResponse.json({
+    return NextResponse.json({ 
+      success: true, 
       message: 'Perfil actualizado exitosamente',
-      user,
+      user
     });
   } catch (error) {
-    console.error('Error updating user profile:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { success: false, error: 'Error del servidor' },
       { status: 500 }
     );
   }

@@ -1,29 +1,14 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
+import postgres from 'postgres';
 import bcrypt from 'bcryptjs';
 
-const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
-const dbPath = isVercel 
-  ? path.join('/tmp', 'max-limpieza.db') 
-  : path.join(process.cwd(), 'data', 'max-limpieza.db');
-
-// Ensure data directory exists
-const dataDir = path.dirname(dbPath);
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-const db = new Database(dbPath);
-
-// Enable foreign keys
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const sql = postgres(process.env.DATABASE_URL as string, {
+  ssl: 'require',
+});
 
 // Initialize database tables
-export function initializeDatabase() {
+export async function initializeDatabase() {
   // Create users table with customer support
-  db.exec(`
+  await sql`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -38,19 +23,23 @@ export function initializeDatabase() {
       verification_token TEXT,
       email_verified INTEGER DEFAULT 0,
       active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS password_resets (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       token TEXT UNIQUE NOT NULL,
-      expires_at DATETIME NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -58,9 +47,11 @@ export function initializeDatabase() {
       description TEXT,
       image TEXT,
       active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -74,11 +65,13 @@ export function initializeDatabase() {
       active INTEGER DEFAULT 1,
       featured INTEGER DEFAULT 0,
       bestseller INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (category_id) REFERENCES categories(id)
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS orders (
       id TEXT PRIMARY KEY,
       customer_name TEXT NOT NULL,
@@ -90,10 +83,13 @@ export function initializeDatabase() {
       total REAL NOT NULL,
       status TEXT DEFAULT 'pending',
       items TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      user_id TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS tips (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -101,9 +97,11 @@ export function initializeDatabase() {
       image TEXT,
       category TEXT,
       active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS combos (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -113,9 +111,11 @@ export function initializeDatabase() {
       products TEXT NOT NULL,
       image TEXT,
       active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id TEXT PRIMARY KEY,
       customer_name TEXT NOT NULL,
@@ -124,16 +124,20 @@ export function initializeDatabase() {
       plan TEXT NOT NULL,
       frequency TEXT NOT NULL,
       active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS newsletter_subscribers (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       active INTEGER DEFAULT 1
     );
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS reviews (
       id TEXT PRIMARY KEY,
       product_id TEXT NOT NULL,
@@ -142,88 +146,26 @@ export function initializeDatabase() {
       user_email TEXT NOT NULL,
       rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
       comment TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       approved INTEGER DEFAULT 0,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
-  `);
+  `;
 
-  // Add delivery_method column if it doesn't exist (migration)
-  try {
-    db.prepare("ALTER TABLE orders ADD COLUMN delivery_method TEXT DEFAULT 'delivery'").run();
-  } catch {
-    // Column already exists, ignore error
-  }
+  // Indexes (in postgres we don't catch failures for CREATE INDEX IF NOT EXISTS generally)
+  await sql`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(approved)`;
 
-  // Add user_id to orders if it doesn't exist (migration)
-  try {
-    db.prepare("ALTER TABLE orders ADD COLUMN user_id TEXT").run();
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)").run();
-  } catch {
-    // Column already exists, ignore error
-  }
-
-  // Add email index for faster lookups
-  try {
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)").run();
-  } catch {
-    // Column already exists, ignore error
-  }
-
-  // Add customer fields to users table if they don't exist (migration)
-  const customerFields = [
-    "ALTER TABLE users ADD COLUMN name TEXT",
-    "ALTER TABLE users ADD COLUMN phone TEXT",
-    "ALTER TABLE users ADD COLUMN address TEXT",
-    "ALTER TABLE users ADD COLUMN city TEXT",
-    "ALTER TABLE users ADD COLUMN postal_code TEXT",
-    "ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0",
-    "ALTER TABLE users ADD COLUMN verification_token TEXT",
-    "ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0",
-    "ALTER TABLE users ADD COLUMN active INTEGER DEFAULT 1",
-    "ALTER TABLE users ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP",
-  ];
-
-  customerFields.forEach(sql => {
-    try {
-      db.prepare(sql).run();
-    } catch {
-      // Column already exists, ignore error
-    }
-  });
-
-  // Add reviews index for faster lookups
-  try {
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id)").run();
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(approved)").run();
-  } catch {
-    // Index already exists, ignore error
-  }
-
-  // Create password_resets table if it doesn't exist
-  try {
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS password_resets (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        token TEXT UNIQUE NOT NULL,
-        expires_at DATETIME NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-    `);
-  } catch {
-    // Table already exists, ignore error
-  }
-
-  // Insert default admin user (password: admin123)
+  // Insert default admin user
   const hashedPassword = bcrypt.hashSync('admin123', 10);
-
-  db.exec(`
-    INSERT OR IGNORE INTO users (id, email, password, role, name, active)
-    VALUES ('admin-001', 'admin@maxlimpieza.com', '${hashedPassword}', 'admin', 'Administrador', 1);
-  `);
+  await sql`
+    INSERT INTO users (id, email, password, role, name, active)
+    VALUES ('admin-001', 'admin@maxlimpieza.com', ${hashedPassword}, 'admin', 'Administrador', 1)
+    ON CONFLICT (email) DO NOTHING;
+  `;
 
   // Insert default categories
   const defaultCategories = [
@@ -236,12 +178,13 @@ export function initializeDatabase() {
     { id: 'cat-007', name: 'Jabón de Ropa', slug: 'jabon-ropa', description: 'Jabones líquidos y en polvo para lavar la ropa' },
   ];
 
-  defaultCategories.forEach(cat => {
-    db.exec(`
-      INSERT OR IGNORE INTO categories (id, name, slug, description) 
-      VALUES ('${cat.id}', '${cat.name}', '${cat.slug}', '${cat.description}');
-    `);
-  });
+  for (const cat of defaultCategories) {
+    await sql`
+      INSERT INTO categories (id, name, slug, description) 
+      VALUES (${cat.id}, ${cat.name}, ${cat.slug}, ${cat.description})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
 
   // Insert sample products
   const sampleProducts = [
@@ -255,12 +198,13 @@ export function initializeDatabase() {
     { id: 'prod-008', name: 'Limpiavidrios 500ml', description: 'Limpiavidrios profesional sin rayas. Secado rápido con brillo extra.', price: 680, stock: 70, category_id: 'cat-001', featured: 0, bestseller: 0 },
   ];
 
-  sampleProducts.forEach(prod => {
-    db.exec(`
-      INSERT OR IGNORE INTO products (id, name, description, price, stock, category_id, featured, bestseller) 
-      VALUES ('${prod.id}', '${prod.name.replace(/'/g, "''")}', '${prod.description.replace(/'/g, "''")}', ${prod.price}, ${prod.stock}, '${prod.category_id}', ${prod.featured}, ${prod.bestseller});
-    `);
-  });
+  for (const prod of sampleProducts) {
+    await sql`
+      INSERT INTO products (id, name, description, price, stock, category_id, featured, bestseller) 
+      VALUES (${prod.id}, ${prod.name}, ${prod.description}, ${prod.price}, ${prod.stock}, ${prod.category_id}, ${prod.featured}, ${prod.bestseller})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
 
   // Insert sample tips
   const sampleTips = [
@@ -269,28 +213,26 @@ export function initializeDatabase() {
     { id: 'tip-003', title: 'Mantén tu auto limpio por más tiempo', content: 'Lava tu auto semanalmente con shampoo automotriz (nunca uses detergente). Seca con paño de microfibra para evitar manchas de agua. Aplica cera protectora mensual.', category: 'Automotriz' },
   ];
 
-  sampleTips.forEach(tip => {
-    db.exec(`
-      INSERT OR IGNORE INTO tips (id, title, content, category) 
-      VALUES ('${tip.id}', '${tip.title.replace(/'/g, "''")}', '${tip.content.replace(/'/g, "''")}', '${tip.category}');
-    `);
-  });
+  for (const tip of sampleTips) {
+    await sql`
+      INSERT INTO tips (id, title, content, category) 
+      VALUES (${tip.id}, ${tip.title}, ${tip.content}, ${tip.category})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
 
-  // Insert sample combos
   const sampleCombos = [
     { id: 'combo-001', name: 'Pack Limpieza Total del Hogar', description: 'Todo lo que necesitas para una limpieza completa', price: 3500, original_price: 4500, products: 'Detergente 1L, Desinfectante 1L, Ambientador 500ml' },
     { id: 'combo-002', name: 'Kit Automotriz Premium', description: 'Productos profesionales para el cuidado de tu vehículo', price: 4200, original_price: 5500, products: 'Shampoo 1L, Cera Líquida, Paño Microfibra' },
   ];
 
-  sampleCombos.forEach(combo => {
-    db.exec(`
-      INSERT OR IGNORE INTO combos (id, name, description, price, original_price, products) 
-      VALUES ('${combo.id}', '${combo.name.replace(/'/g, "''")}', '${combo.description.replace(/'/g, "''")}', ${combo.price}, ${combo.original_price}, '${combo.products.replace(/'/g, "''")}');
-    `);
-  });
+  for (const combo of sampleCombos) {
+    await sql`
+      INSERT INTO combos (id, name, description, price, original_price, products) 
+      VALUES (${combo.id}, ${combo.name}, ${combo.description}, ${combo.price}, ${combo.original_price}, ${combo.products})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
 }
 
-// Initialize database on import
-initializeDatabase();
-
-export default db;
+export default sql;

@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'max-limpieza-secret-key-2024-chang
 export interface User {
   id: string;
   email: string;
-  password: string;
+  password?: string;
   role: string;
   name?: string;
   phone?: string;
@@ -18,7 +18,7 @@ export interface User {
   postal_code?: string;
   email_verified?: number;
   active?: number;
-  created_at: string;
+  created_at?: string;
   updated_at?: string;
 }
 
@@ -33,17 +33,18 @@ export interface UserWithoutPassword {
   postal_code?: string;
   email_verified?: number;
   active?: number;
-  created_at: string;
+  created_at?: string;
   updated_at?: string;
 }
 
-export function authenticateUser(email: string, password: string): { token: string; user: UserWithoutPassword } | null {
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as User | null;
+export async function authenticateUser(email: string, password: string): Promise<{ token: string; user: UserWithoutPassword } | null> {
+  const users = await db<User[]>`SELECT * FROM users WHERE email = ${email}`;
+  const user = users[0];
 
   if (!user) return null;
-  if (!user.active) return null; // Don't allow inactive users to login
+  if (!user.active) return null;
 
-  const isValidPassword = bcrypt.compareSync(password, user.password);
+  const isValidPassword = bcrypt.compareSync(password, user.password as string);
   if (!isValidPassword) return null;
 
   const token = jwt.sign(
@@ -56,7 +57,7 @@ export function authenticateUser(email: string, password: string): { token: stri
   return { token, user: userWithoutPassword };
 }
 
-export function registerCustomer(data: {
+export async function registerCustomer(data: {
   email: string;
   password: string;
   name: string;
@@ -64,34 +65,32 @@ export function registerCustomer(data: {
   address?: string;
   city?: string;
   postal_code?: string;
-}): { token: string; user: UserWithoutPassword } | null {
-  // Check if user already exists
-  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(data.email);
-  if (existingUser) return null;
+}): Promise<{ token: string; user: UserWithoutPassword } | null> {
+  const existing = await db`SELECT id FROM users WHERE email = ${data.email}`;
+  if (existing.length > 0) return null;
 
   const id = uuidv4();
   const verificationToken = uuidv4();
   const hashedPassword = hashPassword(data.password);
 
   try {
-      db.prepare(`
-        INSERT INTO users (id, email, password, role, name, phone, address, city, postal_code, active, verification_token)
-        VALUES (?, ?, ?, 'customer', ?, ?, ?, ?, ?, 1, ?)
-      `).run(id, data.email, hashedPassword, data.name, data.phone || null, data.address || null, data.city || null, data.postal_code || null, verificationToken);
+    await db`
+      INSERT INTO users (id, email, password, role, name, phone, address, city, postal_code, active, verification_token)
+      VALUES (${id}, ${data.email}, ${hashedPassword}, 'customer', ${data.name}, ${data.phone || null}, ${data.address || null}, ${data.city || null}, ${data.postal_code || null}, 1, ${verificationToken})
+    `;
 
-      // Get the newly created user
-      const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as User | null;
-      if (!user) return null;
+    const newUser = await db<User[]>`SELECT * FROM users WHERE id = ${id}`;
+    const user = newUser[0];
+    if (!user) return null;
 
-      // Send emails (async, non-blocking)
-      sendWelcomeEmail({ name: data.name, email: data.email }).catch(console.error);
-      sendVerificationEmail(data.email, verificationToken).catch(console.error);
+    sendWelcomeEmail({ name: data.name, email: data.email }).catch(console.error);
+    sendVerificationEmail(data.email, verificationToken).catch(console.error);
 
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
     const { password: _password, ...userWithoutPassword } = user; // eslint-disable-line @typescript-eslint/no-unused-vars
     return { token, user: userWithoutPassword };
@@ -101,24 +100,18 @@ export function registerCustomer(data: {
   }
 }
 
-export function createPasswordResetToken(userId: string): string | null {
+export async function createPasswordResetToken(userId: string): Promise<string | null> {
   const token = uuidv4();
-  const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour from now
+  const expiresAt = new Date(Date.now() + 3600000).toISOString();
 
   try {
-    // Delete any existing reset tokens for this user
-    db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(userId);
+    await db`DELETE FROM password_resets WHERE user_id = ${userId}`;
+    await db`INSERT INTO password_resets (id, user_id, token, expires_at) VALUES (${uuidv4()}, ${userId}, ${token}, ${expiresAt})`;
 
-    // Create new token
-    db.prepare('INSERT INTO password_resets (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)')
-      .run(uuidv4(), userId, token, expiresAt);
-
-    // Get user email and send reset email
-    const user = db.prepare('SELECT email FROM users WHERE id = ?').get(userId) as { email: string } | null;
-    if (user) {
-      sendPasswordResetEmail(user.email, token).catch(console.error);
+    const users = await db`SELECT email FROM users WHERE id = ${userId}`;
+    if (users[0]) {
+      sendPasswordResetEmail(users[0].email, token).catch(console.error);
     }
-
     return token;
   } catch (error) {
     console.error('Error creating password reset token:', error);
@@ -126,27 +119,21 @@ export function createPasswordResetToken(userId: string): string | null {
   }
 }
 
-export function verifyPasswordResetToken(token: string): { userId: string } | null {
-  const reset = db.prepare(`
+export async function verifyPasswordResetToken(token: string): Promise<{ userId: string } | null> {
+  const resets = await db`
     SELECT user_id, expires_at FROM password_resets 
-    WHERE token = ? AND expires_at > datetime('now')
-  `).get(token) as { user_id: string; expires_at: string } | null;
-
-  if (!reset) return null;
-
-  return { userId: reset.user_id };
+    WHERE token = ${token} AND expires_at > CURRENT_TIMESTAMP
+  `;
+  if (!resets[0]) return null;
+  return { userId: resets[0].user_id };
 }
 
-export function resetPassword(userId: string, newPassword: string): boolean {
+export async function resetPassword(userId: string, newPassword: string): Promise<boolean> {
   const hashedPassword = hashPassword(newPassword);
 
   try {
-    db.prepare('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .run(hashedPassword, userId);
-
-    // Delete used reset token
-    db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(userId);
-
+    await db`UPDATE users SET password = ${hashedPassword}, updated_at = CURRENT_TIMESTAMP WHERE id = ${userId}`;
+    await db`DELETE FROM password_resets WHERE user_id = ${userId}`;
     return true;
   } catch (error) {
     console.error('Error resetting password:', error);
@@ -154,45 +141,26 @@ export function resetPassword(userId: string, newPassword: string): boolean {
   }
 }
 
-export function updateUserProfile(userId: string, data: {
+export async function updateUserProfile(userId: string, data: {
   name?: string;
   phone?: string;
   address?: string;
   city?: string;
   postal_code?: string;
-}): boolean {
+}): Promise<boolean> {
   try {
-    const updates: string[] = [];
-    const values: (string | number | null)[] = [];
+    const keys = Object.keys(data).filter(k => (data as any)[k] !== undefined);
+    if (keys.length === 0) return false;
 
-    if (data.name !== undefined) {
-      updates.push('name = ?');
-      values.push(data.name);
+    // Build dynamic update
+    for (const key of keys) {
+      if (key === 'name') await db`UPDATE users SET name = ${data.name || null} WHERE id = ${userId}`;
+      if (key === 'phone') await db`UPDATE users SET phone = ${data.phone || null} WHERE id = ${userId}`;
+      if (key === 'address') await db`UPDATE users SET address = ${data.address || null} WHERE id = ${userId}`;
+      if (key === 'city') await db`UPDATE users SET city = ${data.city || null} WHERE id = ${userId}`;
+      if (key === 'postal_code') await db`UPDATE users SET postal_code = ${data.postal_code || null} WHERE id = ${userId}`;
     }
-    if (data.phone !== undefined) {
-      updates.push('phone = ?');
-      values.push(data.phone);
-    }
-    if (data.address !== undefined) {
-      updates.push('address = ?');
-      values.push(data.address);
-    }
-    if (data.city !== undefined) {
-      updates.push('city = ?');
-      values.push(data.city);
-    }
-    if (data.postal_code !== undefined) {
-      updates.push('postal_code = ?');
-      values.push(data.postal_code);
-    }
-
-    if (updates.length === 0) return false;
-
-    updates.push("updated_at = CURRENT_TIMESTAMP");
-    values.push(userId);
-
-    const sql = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
-    db.prepare(sql).run(...values);
+    await db`UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = ${userId}`;
 
     return true;
   } catch (error) {
@@ -205,7 +173,7 @@ export function verifyToken(token: string): { id: string; email: string; role: s
   try {
     return jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
   } catch {
-    return null;
+    return null; // or null
   }
 }
 
@@ -213,11 +181,9 @@ export function hashPassword(password: string): string {
   return bcrypt.hashSync(password, 10);
 }
 
-export function createUser(email: string, password: string, role = 'admin'): string {
+export async function createUser(email: string, password: string, role = 'admin'): Promise<string> {
   const id = uuidv4();
   const hashedPassword = hashPassword(password);
-
-  const stmt = db.prepare('INSERT INTO users (id, email, password, role) VALUES (?, ?, ?, ?)');
-  stmt.run(id, email, hashedPassword, role);
+  await db`INSERT INTO users (id, email, password, role) VALUES (${id}, ${email}, ${hashedPassword}, ${role})`;
   return id;
 }

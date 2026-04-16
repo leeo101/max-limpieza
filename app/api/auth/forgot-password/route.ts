@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by email
-    const user = db.prepare('SELECT id, email, name FROM users WHERE email = ?').get(email) as { id: string; email: string; name: string } | null;
+    const users = await db`SELECT id, email, name FROM users WHERE email = ${email}`;
+    const user = users[0];
 
     if (!user) {
       // Don't reveal if email exists or not for security

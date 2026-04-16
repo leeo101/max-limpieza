@@ -11,14 +11,14 @@ export async function GET(request: NextRequest) {
 
   try {
     // Find user with this token
-    const user = db.prepare('SELECT id FROM users WHERE verification_token = ?').get(token) as { id: string } | null;
-
+    const users = await db`SELECT id FROM users WHERE verification_token = ${token}`;
+    const user = users[0];
+    
     if (!user) {
-      return NextResponse.redirect(new URL('/iniciar-sesion?error=invalid_token', request.url));
+      return NextResponse.json({ success: false, error: 'Invalid or expired token' }, { status: 400 });
     }
-
-    // Mark as verified and clear token
-    db.prepare('UPDATE users SET email_verified = 1, verification_token = NULL WHERE id = ?').run(user.id);
+    
+    await db`UPDATE users SET email_verified = 1, verification_token = NULL WHERE id = ${user.id}`;
 
     return NextResponse.redirect(new URL('/iniciar-sesion?success=verified', request.url));
   } catch (error) {

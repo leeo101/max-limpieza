@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const review = db.prepare('SELECT id FROM reviews WHERE id = ?').get(reviewId);
+    const reviews = await db`SELECT id FROM reviews WHERE id = ${reviewId}`;
+    const review = reviews[0];
     if (!review) {
       return NextResponse.json(
         { success: false, error: 'Review not found' },
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    db.prepare('UPDATE reviews SET approved = ? WHERE id = ?').run(approve ? 1 : 0, reviewId);
+    await db`UPDATE reviews SET approved = ${approve ? 1 : 0} WHERE id = ${reviewId}`;
 
     return NextResponse.json({
       success: true,

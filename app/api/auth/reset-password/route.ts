@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the reset token
-    const result = verifyPasswordResetToken(token);
-    if (!result) {
+    const tokenData = await verifyPasswordResetToken(token);
+    if (!tokenData) {
       return NextResponse.json(
         { error: 'Token inválido o expirado' },
         { status: 400 }
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Reset password
-    const success = resetPassword(result.userId, password);
+    const success = await resetPassword(tokenData.userId, password);
     if (!success) {
       return NextResponse.json(
         { error: 'Error al restablecer la contraseña' },
