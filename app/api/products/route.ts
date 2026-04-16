@@ -9,18 +9,18 @@ export async function GET(request: NextRequest) {
   try {
     if (action === 'search') {
       const query = searchParams.get('q') || '';
-      const results = searchProducts(query);
+      const results = await searchProducts(query);
       return NextResponse.json({ success: true, data: results });
     }
 
     if (action === 'by-category') {
       const categoryId = searchParams.get('categoryId') || '';
-      const results = getProductsByCategory(categoryId);
+      const results = await getProductsByCategory(categoryId);
       return NextResponse.json({ success: true, data: results });
     }
 
     const activeOnly = searchParams.get('activeOnly') !== 'false';
-    const products = getAllProducts(activeOnly);
+    const products = await getAllProducts(activeOnly);
     return NextResponse.json({ success: true, data: products });
   } catch {
     return NextResponse.json({ success: false, error: 'Error fetching products' }, { status: 500 });
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const id = createProduct({
+    const id = await createProduct({
       name: body.name,
       description: body.description,
       price: parseFloat(body.price),
@@ -91,7 +91,7 @@ export async function PUT(request: NextRequest) {
       updateData.stock = parseInt(updateData.stock as string);
     }
 
-    const success = updateProduct(id, updateData);
+    const success = await updateProduct(id, updateData);
     if (!success) {
       return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }
@@ -122,7 +122,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Product ID required' }, { status: 400 });
     }
 
-    const success = deleteProduct(id);
+    const success = await deleteProduct(id);
     if (!success) {
       return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }

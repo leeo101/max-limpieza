@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createOrder, getAllOrders, updateOrderStatus } from '@/lib/products';
+import { createOrder, getAllOrders, updateOrderStatus, getStats, getRecentOrders, getLowStockProducts } from '@/lib/products';
 import { sendOrderConfirmationToCustomer, sendOrderNotification } from '@/lib/email';
 import { verifyToken } from '@/lib/auth';
 
@@ -16,6 +16,25 @@ export async function GET(request: Request) {
 
     if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+
+    if (action === 'stats') {
+      const stats = await getStats();
+      return NextResponse.json({ success: true, data: stats });
+    }
+
+    if (action === 'recent') {
+      const limit = parseInt(searchParams.get('limit') || '10', 10);
+      const orders = await getRecentOrders(limit);
+      return NextResponse.json({ success: true, data: orders });
+    }
+
+    if (action === 'inventory') {
+      const products = await getLowStockProducts(5);
+      return NextResponse.json({ success: true, data: products });
     }
 
     const orders = await getAllOrders();

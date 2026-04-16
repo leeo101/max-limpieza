@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
   try {
-    const categories = getAllCategories(activeOnly);
+    const categories = await getAllCategories(activeOnly);
     return NextResponse.json({ success: true, data: categories });
   } catch {
     return NextResponse.json({ success: false, error: 'Error fetching categories' }, { status: 500 });
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const id = createCategory({
+    const id = await createCategory({
       name: body.name,
       slug: body.slug,
       description: body.description,
@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Category ID required' }, { status: 400 });
     }
 
-    const success = updateCategory(id, body);
+    const success = await updateCategory(id, body);
     if (!success) {
       return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
     }
@@ -93,7 +93,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Category ID required' }, { status: 400 });
     }
 
-    const success = deleteCategory(id);
+    const success = await deleteCategory(id);
     if (!success) {
       return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
     }
