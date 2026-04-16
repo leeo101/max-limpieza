@@ -1,0 +1,21 @@
+{
+  "name": "MAX Limpieza - Productos Premium",
+  "short_name": "MAX Limpieza",
+  "description": "Tu tienda de productos de limpieza para el hogar y la industria. Calidad al mejor precio.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
