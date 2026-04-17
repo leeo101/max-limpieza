@@ -31,7 +31,6 @@ export default function AdminLoginPage() {
         localStorage.setItem('adminToken', result.data.token);
         // Set cookie so middleware allows access
         document.cookie = `adminToken=${result.data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
-        alert('Login exitoso! Redirigiendo...');
         router.push('/admin/dashboard');
       } else {
         setError(result.error || 'Email o contraseña incorrectos');

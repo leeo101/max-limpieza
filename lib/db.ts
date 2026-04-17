@@ -1,10 +1,16 @@
 import postgres from 'postgres';
 import bcrypt from 'bcryptjs';
 
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL is not defined in the environment!');
+}
+
 const sql = postgres(process.env.DATABASE_URL as string, {
   ssl: 'require',
-  prepare: false, // Required for PgBouncer in Supabase transaction pooler (port 6543)
+  prepare: false,
 });
+
+console.log('🔌 Database connection initialized.');
 
 // Initialize database tables
 export async function initializeDatabase() {
