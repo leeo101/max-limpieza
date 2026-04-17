@@ -17,8 +17,10 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ 
       success: true, 
-      user: result.user, 
-      token: result.token 
+      data: {
+        user: result.user, 
+        token: result.token 
+      }
     });
   } catch (error) {
     console.error('Login error:', error);
