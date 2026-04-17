@@ -152,21 +152,22 @@ export default function HomePage() {
                 <Link
                   key={category.id}
                   href={`/tienda?category=${category.slug}`}
-                  className="card p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
+                  className="group flex flex-col items-center text-center hover:-translate-y-2 transition-all duration-300"
                 >
-                  <div className="w-20 h-20 mx-auto mb-3 bg-gradient-to-br from-sky-100 to-emerald-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                  <div className="w-24 h-24 mb-3 bg-white rounded-2xl shadow-md border border-gray-100 flex items-center justify-center overflow-hidden group-hover:shadow-xl group-hover:border-sky-200 transition-all duration-300">
                     {isImage ? (
-                      <img 
-                        src={content as string} 
-                        alt={category.name} 
-                        className="w-full h-full object-contain transition-all duration-300"
-                        style={{ mixBlendMode: 'multiply' }}
+                      <img
+                        src={content as string}
+                        alt={category.name}
+                        className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-110"
                       />
                     ) : (
-                      Icon && <Icon className="w-8 h-8 text-sky-600" />
+                      <div className="w-12 h-12 bg-gradient-to-br from-sky-100 to-emerald-100 rounded-xl flex items-center justify-center">
+                        {Icon && <Icon className="w-7 h-7 text-sky-600" />}
+                      </div>
                     )}
                   </div>
-                  <h3 className="font-semibold text-gray-900 text-sm">{category.name}</h3>
+                  <h3 className="font-semibold text-gray-800 text-sm group-hover:text-sky-600 transition-colors duration-300">{category.name}</h3>
                 </Link>
               );
             })}
