@@ -6,63 +6,93 @@ export interface Category { id: string; name: string; slug: string; description:
 export interface CartItem { id: string; name: string; price: number; quantity: number; image: string | null; }
 export interface Order { id: string; customer_name: string; customer_phone: string; customer_email: string | null; customer_address: string; customer_notes: string | null; delivery_method: string; total: number; status: string; items: string; user_id: string | null; created_at: string; updated_at: string; }
 
+export function normalizeProduct(p: any): Product {
+  if (!p) return p;
+  return {
+    id: p.id,
+    name: p.name || p.nombre || '',
+    description: p.description || p.descripcion || '',
+    price: Number(p.price || p.precio || 0),
+    stock: Number(p.stock || 0),
+    category_id: p.category_id || p.categoria_id || null,
+    image: p.image || p.imagen || null,
+    images: p.images || p.imagenes || null,
+    sku: p.sku || null,
+    active: Number(p.active === undefined ? (p.activo === undefined ? 1 : p.activo) : p.active),
+    featured: Number(p.featured || p.destacado || 0),
+    bestseller: Number(p.bestseller || p.mas_vendido || 0),
+    created_at: p.created_at || p.fecha_creacion || '',
+    updated_at: p.updated_at || p.fecha_actualizacion || '',
+    category_name: p.category_name || p.nombre_categoria || undefined,
+    averageRating: Number(p.averagerating || p.averageRating || p.avgRating || p.calificacion_promedio || 0),
+    reviewCount: Number(p.reviewcount || p.reviewCount || p.total_reviews || 0),
+  };
+}
+
 export async function getAllProducts(activeOnly = true): Promise<Product[]> {
   if (activeOnly) {
-    return (await sql`
+    const results = await sql`
       SELECT p.*, c.name as category_name, COALESCE(r.avgRating, 0) as averageRating, COALESCE(r.reviewCount, 0) as reviewCount
       FROM products p LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN (SELECT product_id, AVG(rating) as avgRating, CAST(COUNT(*) as INTEGER) as reviewCount FROM reviews WHERE approved = 1 GROUP BY product_id) r ON p.id = r.product_id
       WHERE p.active = 1 ORDER BY p.created_at DESC
-    `) as Product[];
+    `;
+    return results.map(normalizeProduct);
   }
-  return (await sql`
+  const results = await sql`
       SELECT p.*, c.name as category_name, COALESCE(r.avgRating, 0) as averageRating, COALESCE(r.reviewCount, 0) as reviewCount
       FROM products p LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN (SELECT product_id, AVG(rating) as avgRating, CAST(COUNT(*) as INTEGER) as reviewCount FROM reviews WHERE approved = 1 GROUP BY product_id) r ON p.id = r.product_id
       ORDER BY p.created_at DESC
-  `) as Product[];
+  `;
+  return results.map(normalizeProduct);
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
   const result = await sql`SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ${id}`;
-  return (result[0] as Product) || null;
+  if (!result[0]) return null;
+  return normalizeProduct(result[0]);
 }
 
 export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
-  return (await sql`
+  const results = await sql`
     SELECT p.*, c.name as category_name, COALESCE(r.avgRating, 0) as averageRating, COALESCE(r.reviewCount, 0) as reviewCount
     FROM products p LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN (SELECT product_id, AVG(rating) as avgRating, CAST(COUNT(*) as INTEGER) as reviewCount FROM reviews WHERE approved = 1 GROUP BY product_id) r ON p.id = r.product_id
     WHERE p.active = 1 AND p.featured = 1 ORDER BY p.created_at DESC LIMIT ${limit}
-  `) as Product[];
+  `;
+  return results.map(normalizeProduct);
 }
 
 export async function getBestsellerProducts(limit = 8): Promise<Product[]> {
-  return (await sql`
+  const results = await sql`
     SELECT p.*, c.name as category_name, COALESCE(r.avgRating, 0) as averageRating, COALESCE(r.reviewCount, 0) as reviewCount
     FROM products p LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN (SELECT product_id, AVG(rating) as avgRating, CAST(COUNT(*) as INTEGER) as reviewCount FROM reviews WHERE approved = 1 GROUP BY product_id) r ON p.id = r.product_id
     WHERE p.active = 1 AND p.bestseller = 1 ORDER BY p.created_at DESC LIMIT ${limit}
-  `) as Product[];
+  `;
+  return results.map(normalizeProduct);
 }
 
 export async function searchProducts(query: string): Promise<Product[]> {
   const term = `%${query}%`;
-  return (await sql`
+  const results = await sql`
     SELECT p.*, c.name as category_name, COALESCE(r.avgRating, 0) as averageRating, COALESCE(r.reviewCount, 0) as reviewCount
     FROM products p LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN (SELECT product_id, AVG(rating) as avgRating, CAST(COUNT(*) as INTEGER) as reviewCount FROM reviews WHERE approved = 1 GROUP BY product_id) r ON p.id = r.product_id
     WHERE p.active = 1 AND (p.name ILIKE ${term} OR p.description ILIKE ${term} OR c.name ILIKE ${term}) ORDER BY p.created_at DESC
-  `) as Product[];
+  `;
+  return results.map(normalizeProduct);
 }
 
 export async function getProductsByCategory(categoryId: string): Promise<Product[]> {
-  return (await sql`
+  const results = await sql`
     SELECT p.*, c.name as category_name, COALESCE(r.avgRating, 0) as averageRating, COALESCE(r.reviewCount, 0) as reviewCount
     FROM products p LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN (SELECT product_id, AVG(rating) as avgRating, CAST(COUNT(*) as INTEGER) as reviewCount FROM reviews WHERE approved = 1 GROUP BY product_id) r ON p.id = r.product_id
     WHERE p.category_id = ${categoryId} AND p.active = 1 ORDER BY p.created_at DESC
-  `) as Product[];
+  `;
+  return results.map(normalizeProduct);
 }
 
 export async function createProduct(data: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<string> {

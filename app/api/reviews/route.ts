@@ -11,11 +11,22 @@ export async function GET(request: Request) {
 
     if (productId) {
       const reviews = await db`
-        SELECT * FROM reviews 
-        WHERE product_id = ${productId} AND approved = 1 
-        ORDER BY created_at DESC
+        SELECT r.*, u.name as user_name
+        FROM reviews r
+        LEFT JOIN users u ON r.user_id = u.id
+        WHERE r.product_id = ${productId} AND r.approved = 1 
+        ORDER BY r.created_at DESC
       `;
-      return NextResponse.json({ success: true, data: reviews });
+
+      // Calculate summary
+      let totalRating = 0;
+      reviews.forEach(r => totalRating += Number(r.rating || 0));
+      const summary = {
+        averageRating: reviews.length > 0 ? totalRating / reviews.length : 0,
+        totalReviews: reviews.length
+      };
+
+      return NextResponse.json({ success: true, data: reviews, summary });
     }
 
     if (all) {
