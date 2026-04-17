@@ -27,19 +27,21 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        // Store token for customer (different from admin)
-        localStorage.setItem('userToken', result.data.token);
-        localStorage.setItem('userData', JSON.stringify(result.data.user));
-        
-        // Redirect to account page or previous page
-        const from = new URLSearchParams(window.location.search).get('from');
-        toast.success(`¡Bienvenido de vuelta!`);
-        router.push(from || '/mi-cuenta');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.user) {
+          localStorage.setItem('userToken', result.token);
+          localStorage.setItem('userData', JSON.stringify(result.user));
+          
+          // Redirect to account page or previous page
+          const from = new URLSearchParams(window.location.search).get('from');
+          toast.success(`¡Bienvenido de vuelta!`);
+          router.push(from || '/mi-cuenta');
+        } else {
+          toast.error(result.error || 'Email o contraseña incorrectos');
+        }
       } else {
-        toast.error(result.error || 'Email o contraseña incorrectos');
+        toast.error('Error al iniciar sesión. Intenta nuevamente.');
       }
     } catch {
       toast.error('Error al iniciar sesión. Intenta nuevamente.');

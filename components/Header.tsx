@@ -40,8 +40,14 @@ export default function Header() {
   useEffect(() => {
     // Get cart count from localStorage
     const updateCartCount = () => {
-      const cart: CartItem[] = JSON.parse(localStorage.getItem('cart') || '[]');
-      setCartCount(cart.reduce((sum: number, item: CartItem) => sum + item.quantity, 0));
+      try {
+        const cartStr = localStorage.getItem('cart');
+        const cart: CartItem[] = cartStr ? JSON.parse(cartStr) : [];
+        setCartCount(Array.isArray(cart) ? cart.reduce((sum: number, item: CartItem) => sum + item.quantity, 0) : 0);
+      } catch (e) {
+        console.error('Error parsing cart:', e);
+        setCartCount(0);
+      }
     };
 
     updateCartCount();
@@ -52,9 +58,16 @@ export default function Header() {
   useEffect(() => {
     // Check if user is logged in
     const checkUser = () => {
-      const userData = localStorage.getItem('userData');
-      if (userData) {
-        setUser(JSON.parse(userData));
+      try {
+        const userData = localStorage.getItem('userData');
+        if (userData && userData !== 'undefined') {
+          setUser(JSON.parse(userData));
+        } else {
+          setUser(null);
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+        setUser(null);
       }
     };
 

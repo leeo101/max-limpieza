@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true, data: user });
+    return NextResponse.json({ success: true, user });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Error del servidor' },

@@ -12,11 +12,16 @@ export async function POST(request: NextRequest) {
     
     const result = await authenticateUser(email, password);
     if (!result) {
-      return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Credenciales inválidas' }, { status: 401 });
     }
     
-    return NextResponse.json({ success: true, data: result });
-  } catch {
-    return NextResponse.json({ success: false, error: 'Login failed' }, { status: 500 });
+    return NextResponse.json({ 
+      success: true, 
+      user: result.user, 
+      token: result.token 
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json({ success: false, error: 'Error al iniciar sesión' }, { status: 500 });
   }
 }

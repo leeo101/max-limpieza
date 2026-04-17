@@ -67,15 +67,21 @@ export default function AccountPage() {
     try {
       // First try to get from localStorage
       const storedData = localStorage.getItem('userData');
-      if (storedData) {
-        const userData = JSON.parse(storedData);
-        setUser(userData);
-        setFormData({
-          name: userData.name || '',
-          phone: userData.phone || '',
-          address: userData.address || '',
-          city: userData.city || '',
-        });
+      if (storedData && storedData !== 'undefined') {
+        try {
+          const userData = JSON.parse(storedData);
+          if (userData) {
+            setUser(userData);
+            setFormData({
+              name: userData.name || '',
+              phone: userData.phone || '',
+              address: userData.address || '',
+              city: userData.city || '',
+            });
+          }
+        } catch (e) {
+          console.error('Error parsing stored user data:', e);
+        }
       }
 
       // Then fetch latest from server
@@ -87,14 +93,16 @@ export default function AccountPage() {
 
       if (response.ok) {
         const result = await response.json();
-        setUser(result.user);
-        localStorage.setItem('userData', JSON.stringify(result.user));
-        setFormData({
-          name: result.user.name || '',
-          phone: result.user.phone || '',
-          address: result.user.address || '',
-          city: result.user.city || '',
-        });
+        if (result.success && result.user) {
+          setUser(result.user);
+          localStorage.setItem('userData', JSON.stringify(result.user));
+          setFormData({
+            name: result.user.name || '',
+            phone: result.user.phone || '',
+            address: result.user.address || '',
+            city: result.user.city || '',
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -342,21 +350,32 @@ export default function AccountPage() {
                           
                           <div className="border-t border-gray-100 pt-3">
                             <div className="space-y-2">
-                              {(JSON.parse(order.items) as OrderItem[]).slice(0, 2).map((item: OrderItem, idx: number) => (
-                                <div key={idx} className="flex justify-between text-sm">
-                                  <span className="text-gray-700">
-                                    {item.quantity}x {item.name}
-                                  </span>
-                                  <span className="text-gray-900 font-medium">
-                                    ${(item.price * item.quantity).toLocaleString('es-AR')}
-                                  </span>
-                                </div>
-                              ))}
-                              {(JSON.parse(order.items) as OrderItem[]).length > 2 && (
-                                <p className="text-sm text-gray-500">
-                                  +{(JSON.parse(order.items) as OrderItem[]).length - 2} productos más
-                                </p>
-                              )}
+                              {(() => {
+                                try {
+                                  const items = JSON.parse(order.items) as OrderItem[];
+                                  return (
+                                    <>
+                                      {items.slice(0, 2).map((item: OrderItem, idx: number) => (
+                                        <div key={idx} className="flex justify-between text-sm">
+                                          <span className="text-gray-700">
+                                            {item.quantity}x {item.name}
+                                          </span>
+                                          <span className="text-gray-900 font-medium">
+                                            ${(item.price * item.quantity).toLocaleString('es-AR')}
+                                          </span>
+                                        </div>
+                                      ))}
+                                      {items.length > 2 && (
+                                        <p className="text-sm text-gray-500">
+                                          +{items.length - 2} productos más
+                                        </p>
+                                      )}
+                                    </>
+                                  );
+                                } catch (e) {
+                                  return <p className="text-sm text-red-500">Error al cargar productos</p>;
+                                }
+                              })()}
                             </div>
                             
                             <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
