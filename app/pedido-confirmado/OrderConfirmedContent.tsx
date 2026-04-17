@@ -211,8 +211,3 @@ export default function OrderConfirmedContent() {
     </div>
   );
 }
-
-      <Footer />
-    </div>
-  );
-}
