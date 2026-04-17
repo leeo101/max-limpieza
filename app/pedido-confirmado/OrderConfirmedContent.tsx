@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Copy, Check, ExternalLink, QrCode } from 'lucide-react';
+import { Copy, Check, ExternalLink } from 'lucide-react';
 
 export default function OrderConfirmedContent() {
   const searchParams = useSearchParams();
@@ -152,22 +152,40 @@ export default function OrderConfirmedContent() {
                   </div>
                 </div>
 
-                {/* Right Side: QR Code Area */}
-                <div className="bg-gray-50 rounded-2xl p-8 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200">
-                  <div className="bg-white p-4 rounded-xl shadow-md mb-4 group relative">
-                    <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${alias}`} 
-                      alt="QR Transferencia"
-                      className="w-48 h-48"
-                    />
-                    <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
-                      <QrCode className="w-10 h-10 text-sky-500" />
+                {/* Right Side: How to Pay */}
+                <div className="bg-gradient-to-br from-sky-50 to-emerald-50 rounded-2xl p-6 flex flex-col justify-center border border-sky-100">
+                  <h3 className="font-bold text-gray-900 mb-5 text-center text-lg">¿Cómo pagar en 3 pasos?</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-9 h-9 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center flex-shrink-0 text-sm shadow">1</div>
+                      <div>
+                        <p className="font-semibold text-gray-800 text-sm">Copiá el Alias</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Presioná el botón de copiar al lado del Alias <strong>enzo.09.</strong></p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-4">
+                      <div className="w-9 h-9 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center flex-shrink-0 text-sm shadow">2</div>
+                      <div>
+                        <p className="font-semibold text-gray-800 text-sm">Abrí tu billetera</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Mercado Pago, MODO, BNA+, Ualá o cualquier banco. Buscá <strong>Transferir → Por Alias</strong> y pegá el alias copiado.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-4">
+                      <div className="w-9 h-9 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center flex-shrink-0 text-sm shadow">3</div>
+                      <div>
+                        <p className="font-semibold text-gray-800 text-sm">Envianos el comprobante</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Una vez transferido, mandanos la captura por WhatsApp y confirmamos tu pedido al instante.</p>
+                      </div>
                     </div>
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2">Escaneá para pagar</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    Escané con tu billetera virtual (Mercado Pago, BNA+, MODO, etc.) para transferir directamente.
-                  </p>
+
+                  <div className="mt-6 bg-white rounded-xl p-3 border border-sky-100 text-center">
+                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Compatible con</p>
+                    <p className="text-sm font-semibold text-gray-700">Mercado Pago · MODO · BNA+ · Ualá · Naranja X · y todos los bancos</p>
+                  </div>
                 </div>
 
               </div>
