@@ -1,16 +1,20 @@
 import postgres from 'postgres';
 import bcrypt from 'bcryptjs';
 
-if (!process.env.DATABASE_URL) {
-  console.error('❌ DATABASE_URL is not defined in the environment!');
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  console.error('❌ DATABASE_URL is missing! Server-side DB calls will fail.');
 }
 
-const sql = postgres(process.env.DATABASE_URL as string, {
+const sql = postgres(databaseUrl || 'postgresql://placeholder:5432/db', {
   ssl: 'require',
   prepare: false,
 });
 
-console.log('🔌 Database connection initialized.');
+if (databaseUrl) {
+  console.log('🔌 Database connection initialized with URL.');
+}
 
 // Initialize database tables
 export async function initializeDatabase() {
