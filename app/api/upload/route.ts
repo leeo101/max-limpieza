@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
-
-// Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
 
 export async function POST(request: NextRequest) {
   // Verify authentication
@@ -46,26 +39,38 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const extension = file.name.split('.').pop() || 'jpg';
     const filename = `product-${timestamp}.${extension}`;
-    const filepath = path.join(uploadsDir, filename);
 
-    // Save file
+    // Convert file to ArrayBuffer for Supabase
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    fs.writeFileSync(filepath, buffer);
 
-    // Return public URL
-    const url = `/uploads/${filename}`;
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filename, bytes, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      return NextResponse.json({ success: false, error: 'Error uploading to storage' }, { status: 500 });
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('products')
+      .getPublicUrl(filename);
 
     return NextResponse.json({ 
       success: true, 
       data: { 
-        url,
+        url: publicUrl,
         filename,
         size: file.size 
       } 
     });
   } catch (error) {
-    console.error('Error uploading file:', error);
-    return NextResponse.json({ success: false, error: 'Error uploading file' }, { status: 500 });
+    console.error('Error in upload route:', error);
+    return NextResponse.json({ success: false, error: 'Error processing upload' }, { status: 500 });
   }
 }
