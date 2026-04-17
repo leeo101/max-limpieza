@@ -154,12 +154,13 @@ export default function HomePage() {
                   href={`/tienda?category=${category.slug}`}
                   className="card p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
                 >
-                  <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-sky-100 to-emerald-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 p-2 overflow-hidden">
+                  <div className="w-20 h-20 mx-auto mb-3 bg-gradient-to-br from-sky-100 to-emerald-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
                     {isImage ? (
                       <img 
                         src={content as string} 
                         alt={category.name} 
-                        className="w-full h-full object-contain drop-shadow-md transition-all duration-300"
+                        className="w-full h-full object-contain transition-all duration-300"
+                        style={{ mixBlendMode: 'multiply' }}
                       />
                     ) : (
                       Icon && <Icon className="w-8 h-8 text-sky-600" />
