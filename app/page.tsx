@@ -9,19 +9,19 @@ import ProductCard from '@/components/ProductCard';
 import { ProductSkeleton } from '@/components/Skeleton';
 import { Folder, Check, Zap, DollarSign, MessageCircle, Droplets, SprayCan, FlaskConical, ShieldCheck, Car, Shirt, Star, type LucideIcon } from 'lucide-react';
 
-// Icon mapping for categories
-const categoryIcons: Record<string, LucideIcon> = {
-  'detergentes': Droplets,
-  'desengrasantes': SprayCan,
-  'perfuminas': FlaskConical,
-  'limpieza-automotriz': Car,
-  'desinfectantes': ShieldCheck,
-  'accesorios': Folder,
-  'jabon-ropa': Shirt,
+// Icon/Image mapping for categories
+const categoryContent: Record<string, LucideIcon | string> = {
+  'detergentes': '/categories/detergentes.png',
+  'desengrasantes': '/categories/desengrasantes.png',
+  'perfuminas': '/categories/perfuminas.png',
+  'limpieza-automotriz': '/categories/limpieza-automotriz.png',
+  'desinfectantes': '/categories/desinfectantes.png',
+  'accesorios': '/categories/accesorios.png',
+  'jabon-ropa': '/categories/jabon-ropa.png',
 };
 
-function getCategoryIcon(slug: string): LucideIcon {
-  return categoryIcons[slug] || Folder;
+function getCategoryContent(slug: string): LucideIcon | string {
+  return categoryContent[slug] || Folder;
 }
 
 interface Product {
@@ -144,15 +144,26 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Categorías</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((category) => {
-              const Icon = getCategoryIcon(category.slug);
+              const content = getCategoryContent(category.slug);
+              const isImage = typeof content === 'string';
+              const Icon = !isImage ? content as LucideIcon : null;
+
               return (
                 <Link
                   key={category.id}
                   href={`/tienda?category=${category.slug}`}
                   className="card p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
                 >
-                  <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-sky-100 to-emerald-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="w-8 h-8 text-sky-600" />
+                  <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-sky-100 to-emerald-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 p-2 overflow-hidden">
+                    {isImage ? (
+                      <img 
+                        src={content as string} 
+                        alt={category.name} 
+                        className="w-full h-full object-contain drop-shadow-md transition-all duration-300"
+                      />
+                    ) : (
+                      Icon && <Icon className="w-8 h-8 text-sky-600" />
+                    )}
                   </div>
                   <h3 className="font-semibold text-gray-900 text-sm">{category.name}</h3>
                 </Link>

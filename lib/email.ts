@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { generateOrderPDF } from './pdf';
 
 interface OrderEmailData {
   orderId: string;
@@ -6,7 +7,10 @@ interface OrderEmailData {
   customerPhone: string;
   customerEmail: string;
   customerAddress: string;
+  customerCity?: string;
+  customerProvince?: string;
   deliveryMethod: string;
+  shippingCompany?: string;
   total: number;
   items: Array<{ name: string; quantity: number; price: number }>;
 }
@@ -28,17 +32,16 @@ function createTransporter() {
 export async function sendOrderNotification(orderData: OrderEmailData) {
   try {
     const transporter = createTransporter();
+    const pdfBuffer = await generateOrderPDF(orderData);
     
+    // Fixed admin email as requested
+    const adminEmail = 'enzorodriguez31@gmail.com';
     const orderLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/admin/pedidos`;
     
-    const itemsList = orderData.items
-      .map(item => `• ${item.name} x${item.quantity} - $${(item.price * item.quantity).toLocaleString('es-AR')}`)
-      .join('\n');
-
     const mailOptions = {
       from: `"MAX Limpieza" <${process.env.SMTP_USER}>`,
-      to: process.env.ADMIN_EMAIL || process.env.SMTP_USER,
-      subject: `🛒 ¡Nuevo Pedido! #${orderData.orderId.slice(-6)} - $${orderData.total.toLocaleString('es-AR')}`,
+      to: adminEmail,
+      subject: `🛒 ¡Nuevo Pedido! #${orderData.orderId.slice(-6).toUpperCase()} - $${orderData.total.toLocaleString('es-AR')}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -48,7 +51,6 @@ export async function sendOrderNotification(orderData: OrderEmailData) {
             .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
             .header { background: linear-gradient(135deg, #0ea5e9, #10b981); color: white; padding: 30px; text-align: center; }
             .header h1 { margin: 0; font-size: 28px; }
-            .header p { margin: 10px 0 0; opacity: 0.9; }
             .content { padding: 30px; }
             .section { margin-bottom: 25px; }
             .section h3 { color: #0ea5e9; border-bottom: 2px solid #e0f2fe; padding-bottom: 8px; margin-bottom: 12px; }
@@ -62,18 +64,14 @@ export async function sendOrderNotification(orderData: OrderEmailData) {
             .total-row { background: #f0fdf4; }
             .total-row td { font-size: 18px; font-weight: bold; color: #10b981; }
             .btn { display: inline-block; background: #0ea5e9; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
-            .btn:hover { background: #0284c7; }
             .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px; }
-            .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-            .badge-pending { background: #fef3c7; color: #92400e; }
-            .delivery-badge { background: #e0f2fe; color: #0369a1; padding: 8px 16px; border-radius: 8px; display: inline-block; margin-top: 8px; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
               <h1>🛒 ¡Nuevo Pedido Recibido!</h1>
-              <p>Pedido #${orderData.orderId.slice(-6)}</p>
+              <p>Pedido #${orderData.orderId.slice(-6).toUpperCase()}</p>
             </div>
             
             <div class="content">
@@ -94,16 +92,20 @@ export async function sendOrderNotification(orderData: OrderEmailData) {
                   </div>
                   <div class="info-item">
                     <div class="info-label">Dirección</div>
-                    <div class="info-value">${orderData.customerAddress}</div>
+                    <div class="info-value">
+                      ${orderData.customerAddress}<br>
+                      ${orderData.customerCity ? orderData.customerCity + ', ' : ''}${orderData.customerProvince || ''}
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div class="section">
-                <h3>🚚 Método de Entrega</h3>
-                <div class="delivery-badge">
-                  ${orderData.deliveryMethod === 'delivery' ? '📦 Envío a Domicilio' : '🏪 Retiro en Local'}
+                <h3>🚚 Entrega</h3>
+                <div style="background: #e0f2fe; color: #0369a1; padding: 12px; border-radius: 8px; font-weight: bold;">
+                  ${orderData.deliveryMethod === 'delivery' ? `📦 Envío por ${orderData.shippingCompany || 'Transporte'}` : '🏪 Retiro en Local'}
                 </div>
+                ${orderData.deliveryMethod === 'delivery' ? '<p style="font-size: 12px; color: #64748b; margin-top: 5px;">(Pago en destino a cargo del cliente)</p>' : ''}
               </div>
 
               <div class="section">
@@ -113,7 +115,7 @@ export async function sendOrderNotification(orderData: OrderEmailData) {
                     <tr>
                       <th>Producto</th>
                       <th>Cantidad</th>
-                      <th>Precio</th>
+                      <th>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -133,42 +135,24 @@ export async function sendOrderNotification(orderData: OrderEmailData) {
               </div>
 
               <div class="section" style="text-align: center;">
-                <h3>⚡ Gestionar Pedido</h3>
-                <p style="color: #64748b; margin-bottom: 15px;">Hacé clic en el botón para ver y gestionar este pedido:</p>
-                <a href="${orderLink}" class="btn">Ver Pedido en el Panel Admin</a>
+                <p style="color: #64748b; margin-bottom: 15px;">Se adjunta la boleta en PDF para control.</p>
+                <a href="${orderLink}" class="btn">Gestionar en Panel Admin</a>
               </div>
             </div>
 
             <div class="footer">
-              <p>© ${new Date().getFullYear()} MAX Gestión de Artículos de Limpieza</p>
-              <p>Este email fue enviado automáticamente. No respondas a este mensaje.</p>
+              <p>© ${new Date().getFullYear()} MAX Artículos de Limpieza</p>
             </div>
           </div>
         </body>
         </html>
       `,
-      text: `
-🛒 ¡NUEVO PEDIDO!
-
-Pedido: #${orderData.orderId.slice(-6)}
-Fecha: ${new Date().toLocaleString('es-AR')}
-
-👤 CLIENTE:
-Nombre: ${orderData.customerName}
-Teléfono: ${orderData.customerPhone}
-Email: ${orderData.customerEmail}
-Dirección: ${orderData.customerAddress}
-
-🚚 ENTREGA: ${orderData.deliveryMethod === 'delivery' ? 'Envío a Domicilio' : 'Retiro en Local'}
-
-📦 PRODUCTOS:
-${itemsList}
-
-💰 TOTAL: $${orderData.total.toLocaleString('es-AR')}
-
-📋 GESTIONAR PEDIDO:
-${orderLink}
-      `,
+      attachments: [
+        {
+          filename: `Pedido-MAX-${orderData.orderId.slice(-6).toUpperCase()}.pdf`,
+          content: pdfBuffer,
+        }
+      ]
     };
 
     const result = await transporter.sendMail(mailOptions);
@@ -184,11 +168,12 @@ ${orderLink}
 export async function sendOrderConfirmationToCustomer(orderData: OrderEmailData) {
   try {
     const transporter = createTransporter();
+    const pdfBuffer = await generateOrderPDF(orderData);
     
     const mailOptions = {
       from: `"MAX Limpieza" <${process.env.SMTP_USER}>`,
       to: orderData.customerEmail,
-      subject: `✅ ¡Tu pedido #${orderData.orderId.slice(-6)} fue recibido! - MAX Limpieza`,
+      subject: `✅ ¡Tu pedido #${orderData.orderId.slice(-6).toUpperCase()} fue recibido! - MAX Limpieza`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -202,75 +187,71 @@ export async function sendOrderConfirmationToCustomer(orderData: OrderEmailData)
             .section { margin-bottom: 25px; }
             .section h3 { color: #10b981; border-bottom: 2px solid #d1fae5; padding-bottom: 8px; }
             .info-box { background: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-            .items-list { list-style: none; padding: 0; }
-            .items-list li { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-            .total { background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px; }
-            .total-price { font-size: 24px; font-weight: bold; color: #10b981; }
             .whatsapp-btn { display: inline-block; background: #25D366; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>✅ ¡Pedido Confirmado!</h1>
-              <p>Pedido #${orderData.orderId.slice(-6)}</p>
+              <h1>✅ ¡Pedido Recibido!</h1>
+              <p>Orden #${orderData.orderId.slice(-6).toUpperCase()}</p>
             </div>
             
             <div class="content">
               <div class="section">
                 <h3>Hola ${orderData.customerName},</h3>
-                <p>Tu pedido fue recibido exitosamente. Nos pondremos en contacto para coordinar la entrega.</p>
+                <p>Tu pedido ha sido recibido correctamente. Te adjuntamos la boleta en PDF con el detalle de tu compra y los datos para realizar el pago.</p>
               </div>
 
-              <div class="section">
-                <h3>📦 Resumen del Pedido</h3>
-                <ul class="items-list">
-                  ${orderData.items.map(item => `
-                    <li>${item.name} <strong>x${item.quantity}</strong> - $${(item.price * item.quantity).toLocaleString('es-AR')}</li>
-                  `).join('')}
-                </ul>
-                <div class="total">
-                  <div>Total a pagar:</div>
-                  <div class="total-price">$${orderData.total.toLocaleString('es-AR')}</div>
-                </div>
-              </div>
-
-              <div class="section">
+               <div class="section">
                 <h3>🚚 Entrega</h3>
                 <div class="info-box">
-                  <strong>${orderData.deliveryMethod === 'delivery' ? '📦 Envío a Domicilio' : '🏪 Retiro en Local'}</strong>
-                  <p style="margin: 8px 0 0;">${orderData.customerAddress}</p>
+                  <strong>${orderData.deliveryMethod === 'delivery' ? `📦 Envío por ${orderData.shippingCompany || 'Transporte'}` : '🏪 Retiro en Local'}</strong>
+                  <p style="margin: 8px 0 0;">
+                    ${orderData.customerAddress}<br>
+                    ${orderData.customerCity ? orderData.customerCity + ', ' : ''}${orderData.customerProvince || ''}
+                  </p>
+                  ${orderData.deliveryMethod === 'delivery' ? '<p style="margin-top: 10px; font-size: 12px; color: #b45309;">⚠️ El costo de envío no está incluido y se abona al recibir el paquete.</p>' : ''}
                 </div>
+              </div>
+
+              <div class="section">
+                <h3>💰 Forma de Pago</h3>
+                <div class="info-box">
+                  <p><strong>Mercado Pago (Transferencia)</strong></p>
+                  <p>Alias: <strong>enzo.09.</strong></p>
+                  <p>Titular: <strong>Enzo Leonel Rodriguez</strong></p>
+                </div>
+              <div class="section" style="text-align: center; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                <h3 style="color: #0ea5e9; border: none; margin-top: 0;">💳 Centro de Pago Online</h3>
+                <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">Accedé a nuestro centro de pago para copiar el Alias, ver el QR y facilitar tu transferencia.</p>
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/pedido-confirmado?id=${orderData.orderId}" 
+                   style="display: inline-block; background: #0ea5e9; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                  Ir a Pagar mi Pedido
+                </a>
               </div>
 
               <div class="section" style="text-align: center;">
                 <p><strong>¿Tenés dudas?</strong></p>
-                <a href="https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5491100000000'}?text=Hola!%20Consulta%20sobre%20mi%20pedido%20%23${orderData.orderId.slice(-6)}" class="whatsapp-btn">
+                <a href="https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5491100000000'}?text=Hola!%20Consulta%20sobre%20mi%20pedido%20%23${orderData.orderId.slice(-6).toUpperCase()}" class="whatsapp-btn">
                   💬 Contactar por WhatsApp
                 </a>
               </div>
+            </div>
+
+            <div class="footer" style="background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px;">
+              <p>© ${new Date().getFullYear()} MAX Artículos de Limpieza</p>
             </div>
           </div>
         </body>
         </html>
       `,
-      text: `
-✅ ¡TU PEDIDO FUE RECIBIDO!
-
-Pedido: #${orderData.orderId.slice(-6)}
-
-Hola ${orderData.customerName}, tu pedido fue recibido exitosamente.
-
-📦 PRODUCTOS:
-${orderData.items.map(item => `• ${item.name} x${item.quantity} - $${(item.price * item.quantity).toLocaleString('es-AR')}`).join('\n')}
-
-💰 TOTAL: $${orderData.total.toLocaleString('es-AR')}
-
-🚚 ENTREGA: ${orderData.deliveryMethod === 'delivery' ? 'Envío a Domicilio' : 'Retiro en Local'}
-📍 DIRECCIÓN: ${orderData.customerAddress}
-
-Nos pondremos en contacto pronto. ¡Gracias por tu compra!
-      `,
+      attachments: [
+        {
+          filename: `Boleta-MAX-${orderData.orderId.slice(-6).toUpperCase()}.pdf`,
+          content: pdfBuffer,
+        }
+      ]
     };
 
     const result = await transporter.sendMail(mailOptions);
@@ -436,4 +417,3 @@ export async function sendPasswordResetEmail(email: string, token: string) {
     return { success: false, error };
   }
 }
-

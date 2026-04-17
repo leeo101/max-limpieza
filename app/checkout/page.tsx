@@ -24,12 +24,40 @@ export default function CheckoutPage() {
     customer_phone: '',
     customer_email: '',
     customer_address: '',
+    customer_city: '',
+    customer_province: 'San Juan',
+    customer_postal_code: '',
     delivery_method: 'delivery',
+    shipping_company: 'Correo Argentino',
     customer_notes: '',
   });
 
+  const PROVINCES = [
+    'San Juan', 'CABA', 'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 
+    'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 
+    'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Luis', 
+    'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'
+  ];
+
+  const SHIPPING_COMPANIES = [
+    'Correo Argentino', 'Andreani', 'OCA', 'OCASA', 'Vía Cargo', 'Cruz del Sur', 
+    'La Sevillanita', 'Expreso Luján', 'MD Cargas', 'Buspack', 'Urbano', 
+    'SendBox', 'Integral Pack', 'EcaPack', 'Central de Cargas Terrestres (CCT)', 
+    'Otro (A coordinar)'
+  ];
+
   useEffect(() => {
-    const cartData = JSON.parse(localStorage.getItem('cart') || '[]');
+    const safeParse = (key: string, fallback: any) => {
+      try {
+        const item = localStorage.getItem(key);
+        if (item && item !== 'undefined') return JSON.parse(item);
+      } catch (e) {
+        console.error(`Error parsing ${key}:`, e);
+      }
+      return fallback;
+    };
+
+    const cartData = safeParse('cart', []);
     if (cartData.length === 0) {
       router.push('/carrito');
       return;
@@ -37,15 +65,18 @@ export default function CheckoutPage() {
     setCart(cartData);
 
     // Auto-fill form if user is logged in
-    const userData = localStorage.getItem('userData');
+    const userData = safeParse('userData', null);
     if (userData) {
-      const user = JSON.parse(userData);
       setFormData({
-        customer_name: user.name || '',
-        customer_phone: user.phone || '',
-        customer_email: user.email || '',
-        customer_address: user.address || '',
+        customer_name: userData.name || '',
+        customer_phone: userData.phone || '',
+        customer_email: userData.email || '',
+        customer_address: userData.address || '',
+        customer_city: userData.city || '',
+        customer_province: userData.province || 'San Juan',
+        customer_postal_code: userData.postal_code || '',
         delivery_method: 'delivery',
+        shipping_company: 'Correo Argentino',
         customer_notes: '',
       });
     }
@@ -53,7 +84,7 @@ export default function CheckoutPage() {
     setLoading(false);
   }, [router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -83,6 +114,10 @@ export default function CheckoutPage() {
         headers,
         body: JSON.stringify({
           ...formData,
+          province: formData.customer_province,
+          city: formData.customer_city,
+          postal_code: formData.customer_postal_code,
+          shipping_company: formData.delivery_method === 'delivery' ? formData.shipping_company : null,
           total,
           items: cart,
         }),
@@ -96,7 +131,7 @@ export default function CheckoutPage() {
         window.dispatchEvent(new Event('cartUpdated'));
 
         // Redirect to success page
-        router.push(`/pedido-confirmado?id=${result.data.id}`);
+        router.push(`/pedido-confirmado?id=${result.id}`);
       } else {
         alert('Error al procesar tu pedido. Intenta nuevamente.');
       }
@@ -215,9 +250,77 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Provincia *
+                      </label>
+                      <select
+                        name="customer_province"
+                        value={formData.customer_province}
+                        onChange={handleChange}
+                        required
+                        className="input-field"
+                      >
+                        {PROVINCES.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ciudad / Localidad *
+                      </label>
+                      <input
+                        type="text"
+                        name="customer_city"
+                        value={formData.customer_city}
+                        onChange={handleChange}
+                        required
+                        className="input-field"
+                        placeholder="Ej: San Juan Capital"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Código Postal *
+                      </label>
+                      <input
+                        type="text"
+                        name="customer_postal_code"
+                        value={formData.customer_postal_code}
+                        onChange={handleChange}
+                        required
+                        className="input-field"
+                        placeholder="Ej: 5400"
+                      />
+                    </div>
+                    {formData.delivery_method === 'delivery' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Empresa de Transporte Preferida *
+                        </label>
+                        <select
+                          name="shipping_company"
+                          value={formData.shipping_company}
+                          onChange={handleChange}
+                          required
+                          className="input-field"
+                        >
+                          {SHIPPING_COMPANIES.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {formData.delivery_method === 'delivery' ? 'Dirección de entrega *' : 'Dirección (opcional)'}
+                      {formData.delivery_method === 'delivery' ? 'Calle y Número *' : 'Dirección (opcional)'}
                     </label>
                     <input
                       type="text"
@@ -226,10 +329,17 @@ export default function CheckoutPage() {
                       onChange={handleChange}
                       required
                       className="input-field"
-                      placeholder={formData.delivery_method === 'delivery' ? 'Calle, número, ciudad' : 'Tu dirección (opcional)'}
+                      placeholder={formData.delivery_method === 'delivery' ? 'Ej: Av. Libertador 1234' : 'Tu dirección (opcional)'}
                     />
                     {formData.delivery_method === 'pickup' && (
-                      <p className="text-xs text-gray-500 mt-1">📍 Te avisaremos cuando esté listo para retirar</p>
+                      <p className="text-xs text-gray-500 mt-1">📍 Te avisaremos cuando esté listo para retirar en nuestro local de San Juan</p>
+                    )}
+                    {formData.delivery_method === 'delivery' && (
+                      <div className="mt-2 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                        <p className="text-xs text-amber-800">
+                          <strong>🚚 Envío:</strong> El costo del transporte <strong>no está incluido</strong> en este pago. Se abona en destino al recibir o retirar el paquete según las tarifas de {formData.shipping_company}.
+                        </p>
+                      </div>
                     )}
                   </div>
 
@@ -277,9 +387,17 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                <div className="border-t pt-3">
-                  <div className="flex justify-between text-xl font-bold text-gray-900">
-                    <span>Total:</span>
+                <div className="border-t pt-3 space-y-2">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Subtotal:</span>
+                    <span>${total.toLocaleString('es-AR')}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Envío:</span>
+                    <span className="font-medium text-amber-600">Pago en Destino</span>
+                  </div>
+                  <div className="flex justify-between text-xl font-bold text-gray-900 border-t pt-2">
+                    <span>Total a pagar hoy:</span>
                     <span className="text-sky-600">${total.toLocaleString('es-AR')}</span>
                   </div>
                 </div>

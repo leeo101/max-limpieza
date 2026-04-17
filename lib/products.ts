@@ -151,11 +151,42 @@ export async function deleteCategory(id: string): Promise<boolean> {
   try { await sql`DELETE FROM categories WHERE id = ${id}`; return true; } catch (e) { return false; }
 }
 
-export async function createOrder(data: { customer_name: string; customer_phone: string; customer_email?: string; customer_address: string; customer_notes?: string; delivery_method?: string; total: number; items: CartItem[]; user_id?: string | null; }): Promise<string> {
+export async function createOrder(data: { 
+  customer_name: string; 
+  customer_phone: string; 
+  customer_email?: string; 
+  customer_address: string; 
+  customer_notes?: string; 
+  delivery_method?: string; 
+  total: number; 
+  items: CartItem[]; 
+  user_id?: string | null;
+  province?: string;
+  city?: string;
+  postal_code?: string;
+  shipping_company?: string;
+  shipping_cost?: number;
+}): Promise<string> {
   const id = uuidv4();
   await sql`
-    INSERT INTO orders (id, customer_name, customer_phone, customer_email, customer_address, customer_notes, delivery_method, total, items, user_id)
-    VALUES (${id}, ${data.customer_name}, ${data.customer_phone}, ${data.customer_email || null}, ${data.customer_address}, ${data.customer_notes || null}, ${data.delivery_method || 'delivery'}, ${data.total}, ${JSON.stringify(data.items)}, ${data.user_id || null})
+    INSERT INTO orders (id, customer_name, customer_phone, customer_email, customer_address, customer_notes, delivery_method, total, items, user_id, province, city, postal_code, shipping_company, shipping_cost)
+    VALUES (
+      ${id}, 
+      ${data.customer_name}, 
+      ${data.customer_phone}, 
+      ${data.customer_email || null}, 
+      ${data.customer_address}, 
+      ${data.customer_notes || null}, 
+      ${data.delivery_method || 'delivery'}, 
+      ${data.total}, 
+      ${JSON.stringify(data.items)}, 
+      ${data.user_id || null},
+      ${data.province || null},
+      ${data.city || null},
+      ${data.postal_code || null},
+      ${data.shipping_company || null},
+      ${data.shipping_cost || 0}
+    )
   `;
   if (data.user_id) {
     try {
