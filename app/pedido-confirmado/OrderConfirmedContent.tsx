@@ -152,39 +152,30 @@ export default function OrderConfirmedContent() {
                   </div>
                 </div>
 
-                {/* Right Side: How to Pay */}
-                <div className="bg-gradient-to-br from-sky-50 to-emerald-50 rounded-2xl p-6 flex flex-col justify-center border border-sky-100">
-                  <h3 className="font-bold text-gray-900 mb-5 text-center text-lg">¿Cómo pagar en 3 pasos?</h3>
+                {/* Right Side: QR + Amount */}
+                <div className="bg-gradient-to-br from-sky-50 to-emerald-50 rounded-2xl p-6 flex flex-col items-center justify-center text-center border border-sky-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-3">Escaneá para transferir</p>
                   
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-9 h-9 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center flex-shrink-0 text-sm shadow">1</div>
-                      <div>
-                        <p className="font-semibold text-gray-800 text-sm">Copiá el Alias</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Presioná el botón de copiar al lado del Alias <strong>enzo.09.</strong></p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-9 h-9 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center flex-shrink-0 text-sm shadow">2</div>
-                      <div>
-                        <p className="font-semibold text-gray-800 text-sm">Abrí tu billetera</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Mercado Pago, MODO, BNA+, Ualá o cualquier banco. Buscá <strong>Transferir → Por Alias</strong> y pegá el alias copiado.</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-9 h-9 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center flex-shrink-0 text-sm shadow">3</div>
-                      <div>
-                        <p className="font-semibold text-gray-800 text-sm">Envianos el comprobante</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Una vez transferido, mandanos la captura por WhatsApp y confirmamos tu pedido al instante.</p>
-                      </div>
-                    </div>
+                  {/* QR Code with CVU */}
+                  <div className="bg-white p-3 rounded-2xl shadow-md mb-4 border border-gray-100">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=0000003100097072211205&bgcolor=ffffff&color=0e4f94&qzone=1`}
+                      alt="QR CVU Transferencia"
+                      className="w-44 h-44 rounded-lg"
+                    />
+                  </div>
+                  
+                  {/* Amount to enter */}
+                  <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-4 mb-3">
+                    <p className="text-xs text-amber-700 font-bold uppercase tracking-wider mb-1">⚠️ Ingresá este monto</p>
+                    <p className="text-3xl font-black text-amber-800">${order?.total.toLocaleString('es-AR')}</p>
+                    <p className="text-xs text-amber-600 mt-1">Al momento de confirmar la transferencia</p>
                   </div>
 
-                  <div className="mt-6 bg-white rounded-xl p-3 border border-sky-100 text-center">
-                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Compatible con</p>
-                    <p className="text-sm font-semibold text-gray-700">Mercado Pago · MODO · BNA+ · Ualá · Naranja X · y todos los bancos</p>
+                  <div className="w-full text-left space-y-1">
+                    <p className="text-xs text-gray-500"><span className="font-semibold text-gray-700">CVU:</span> 0000003100097072211205</p>
+                    <p className="text-xs text-gray-500"><span className="font-semibold text-gray-700">Alias:</span> enzo.09.</p>
+                    <p className="text-xs text-gray-500"><span className="font-semibold text-gray-700">Titular:</span> Enzo Leonel Rodriguez</p>
                   </div>
                 </div>
 
