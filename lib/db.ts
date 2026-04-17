@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 
 const sql = postgres(process.env.DATABASE_URL as string, {
   ssl: 'require',
+  prepare: false, // Required for PgBouncer in Supabase transaction pooler (port 6543)
 });
 
 // Initialize database tables
@@ -159,12 +160,14 @@ export async function initializeDatabase() {
   await sql`CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(approved)`;
 
-  // Insert default admin user
-  const hashedPassword = bcrypt.hashSync('admin123', 10);
+  // Delete old admin and insert new admin user
+  await sql`DELETE FROM users WHERE email = 'admin@maxlimpieza.com'`;
+
+  const hashedPassword = bcrypt.hashSync('EnzoRodriguez10', 10);
   await sql`
     INSERT INTO users (id, email, password, role, name, active)
-    VALUES ('admin-001', 'admin@maxlimpieza.com', ${hashedPassword}, 'admin', 'Administrador', 1)
-    ON CONFLICT (email) DO NOTHING;
+    VALUES ('admin-002', 'enzorodriguez31@gmail.com', ${hashedPassword}, 'admin', 'Administrador', 1)
+    ON CONFLICT (email) DO UPDATE SET password = ${hashedPassword};
   `;
 
   // Insert default categories
