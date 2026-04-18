@@ -40,8 +40,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
   }
 
+  let body: any;
   try {
-    const body = await request.json();
+    body = await request.json();
     const id = await createProduct({
       name: body.name,
       description: body.description,
