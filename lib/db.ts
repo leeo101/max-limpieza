@@ -88,6 +88,7 @@ export async function initializeDatabase() {
       customer_name TEXT NOT NULL,
       customer_phone TEXT NOT NULL,
       customer_email TEXT,
+      customer_dni TEXT,
       customer_address TEXT NOT NULL,
       customer_notes TEXT,
       delivery_method TEXT DEFAULT 'delivery',
@@ -245,6 +246,12 @@ export async function initializeDatabase() {
       VALUES (${combo.id}, ${combo.name}, ${combo.description}, ${combo.price}, ${combo.original_price}, ${combo.products})
       ON CONFLICT (id) DO NOTHING;
     `;
+  }
+  // Check and add customer_dni if it doesn't exist
+  try {
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_dni TEXT`;
+  } catch (e) {
+    console.log('Column customer_dni might already exist');
   }
 }
 

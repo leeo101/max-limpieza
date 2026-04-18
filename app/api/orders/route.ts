@@ -66,6 +66,7 @@ export async function POST(request: Request) {
       customer_name: body.customer_name,
       customer_phone: body.customer_phone,
       customer_email: body.customer_email,
+      customer_dni: body.customer_dni,
       customer_address: body.customer_address,
       customer_notes: body.customer_notes,
       delivery_method: body.delivery_method,

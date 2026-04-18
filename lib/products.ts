@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 export interface Product { id: string; name: string; description: string; price: number; stock: number; category_id: string | null; image: string | null; images: string | null; sku: string | null; active: number; featured: number; bestseller: number; created_at: string; updated_at: string; category_name?: string; averageRating?: number; reviewCount?: number; }
 export interface Category { id: string; name: string; slug: string; description: string | null; image: string | null; active: number; created_at?: string; }
 export interface CartItem { id: string; name: string; price: number; quantity: number; image: string | null; }
-export interface Order { id: string; customer_name: string; customer_phone: string; customer_email: string | null; customer_address: string; customer_notes: string | null; delivery_method: string; total: number; status: string; items: string; user_id: string | null; created_at: string; updated_at: string; }
+export interface Order { id: string; customer_name: string; customer_phone: string; customer_email: string | null; customer_dni: string | null; customer_address: string; customer_notes: string | null; delivery_method: string; total: number; status: string; items: string; user_id: string | null; created_at: string; updated_at: string; }
 
 export function normalizeProduct(p: any): Product {
   if (!p) return p;
@@ -155,6 +155,7 @@ export async function createOrder(data: {
   customer_name: string; 
   customer_phone: string; 
   customer_email?: string; 
+  customer_dni?: string;
   customer_address: string; 
   customer_notes?: string; 
   delivery_method?: string; 
@@ -169,12 +170,13 @@ export async function createOrder(data: {
 }): Promise<string> {
   const id = uuidv4();
   await sql`
-    INSERT INTO orders (id, customer_name, customer_phone, customer_email, customer_address, customer_notes, delivery_method, total, items, user_id, province, city, postal_code, shipping_company, shipping_cost)
+    INSERT INTO orders (id, customer_name, customer_phone, customer_email, customer_dni, customer_address, customer_notes, delivery_method, total, items, user_id, province, city, postal_code, shipping_company, shipping_cost)
     VALUES (
       ${id}, 
       ${data.customer_name}, 
       ${data.customer_phone}, 
       ${data.customer_email || null}, 
+      ${data.customer_dni || null},
       ${data.customer_address}, 
       ${data.customer_notes || null}, 
       ${data.delivery_method || 'delivery'}, 

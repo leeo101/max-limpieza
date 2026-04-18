@@ -23,6 +23,7 @@ export default function CheckoutPage() {
     customer_name: '',
     customer_phone: '',
     customer_email: '',
+    customer_dni: '',
     customer_address: '',
     customer_city: '',
     customer_province: 'San Juan',
@@ -199,6 +200,21 @@ export default function CheckoutPage() {
                       required
                       className="input-field"
                       placeholder="Tu número de teléfono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      DNI (para el correo) *
+                    </label>
+                    <input
+                      type="text"
+                      name="customer_dni"
+                      value={formData.customer_dni}
+                      onChange={handleChange}
+                      required
+                      className="input-field"
+                      placeholder="Tu número de DNI"
                     />
                   </div>
 

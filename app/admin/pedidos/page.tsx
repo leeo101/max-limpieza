@@ -196,15 +196,20 @@ export default function AdminOrdersPage() {
       doc.text(order.customer_phone, 50, 82);
 
       doc.setFont('helvetica', 'bold');
-      doc.text('Dirección:', 20, 89);
+      doc.text('DNI:', 20, 89);
       doc.setFont('helvetica', 'normal');
-      doc.text(order.customer_address, 50, 89);
+      doc.text(order.customer_dni || 'N/A', 50, 89);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Dirección:', 20, 96);
+      doc.setFont('helvetica', 'normal');
+      doc.text(order.customer_address, 50, 96);
 
       if (order.customer_notes) {
         doc.setFont('helvetica', 'bold');
-        doc.text('Notas:', 20, 96);
+        doc.text('Notas:', 20, 103);
         doc.setFont('helvetica', 'normal');
-        doc.text(order.customer_notes, 50, 96);
+        doc.text(order.customer_notes, 50, 103);
       }
 
       // Delivery Status
@@ -237,6 +242,7 @@ export default function AdminOrdersPage() {
           fontStyle: 'bold',
           halign: 'center'
         },
+        startY: 120,
         columnStyles: {
           1: { halign: 'center' },
           2: { halign: 'right' },
@@ -388,7 +394,7 @@ export default function AdminOrdersPage() {
                     {/* Customer Info */}
                     <div className="space-y-4">
                       <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">Información de contacto</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                           <p className="text-[10px] text-gray-400 uppercase font-black mb-1">Dirección</p>
                           <p className="text-sm font-bold text-gray-700 leading-tight">{order.customer_address}</p>
@@ -396,6 +402,10 @@ export default function AdminOrdersPage() {
                         <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                           <p className="text-[10px] text-gray-400 uppercase font-black mb-1">Teléfono</p>
                           <p className="text-sm font-bold text-gray-700">{order.customer_phone}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                          <p className="text-[10px] text-gray-400 uppercase font-black mb-1">DNI</p>
+                          <p className="text-sm font-bold text-gray-700">{order.customer_dni || 'N/A'}</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
