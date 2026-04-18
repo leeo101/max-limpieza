@@ -25,7 +25,7 @@ export default function MiniCart() {
   const wholesaleMin = 200000;
   const wholesaleConditionMet = wholesaleTotal >= wholesaleMin;
   
-  const retailFreeShippingThreshold = 50000;
+  const retailFreeShippingThreshold = 200000;
   const progress = Math.min((total / retailFreeShippingThreshold) * 100, 100);
 
   const isCheckoutDisabled = hasWholesale && !wholesaleConditionMet;

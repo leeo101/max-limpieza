@@ -41,7 +41,7 @@ const faqData: FAQItem[] = [
     category: 'Envíos y Entregas',
     icon: <Truck className="w-5 h-5" />,
     question: '¿El envío es gratuito?',
-    answer: 'Ofrecemos envío gratuito en compras superiores a $50.000. Para pedidos menores, el costo de envío se calcula según la zona y el peso del paquete. Podés ver el costo exacto antes de confirmar tu compra.',
+    answer: 'Ofrecemos envío gratuito en compras superiores a $200.000. Para pedidos menores, el costo de envío se calcula según la zona y el peso del paquete. Podés ver el costo exacto antes de confirmar tu compra.',
   },
   {
     id: 3,
@@ -63,7 +63,7 @@ const faqData: FAQItem[] = [
     category: 'Métodos de Pago',
     icon: <Tag className="w-5 h-5" />,
     question: '¿Ofrecen descuentos por pago en efectivo o transferencia?',
-    answer: 'Sí, ofrecemos un 10% de descuento para pagos en efectivo o por transferencia bancaria. El descuento se aplica automáticamente al seleccionar ese método de pago en el checkout.',
+    answer: 'Sí, ofrecemos un 10% de descuento para pagos en EFECTIVO en nuestro local. Para transferencias bancarias o Mercado Pago, el precio es el publicado.',
   },
   {
     id: 6,

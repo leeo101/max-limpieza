@@ -87,7 +87,7 @@ export default function CheckoutPage() {
   
   const hasWholesale = wholesaleTotal > 0;
   const wholesaleMin = 200000;
-  const retailFreeShippingThreshold = 50000;
+  const retailFreeShippingThreshold = 200000;
 
   const isFreeShipping = hasWholesale 
     ? wholesaleTotal >= wholesaleMin 
@@ -378,8 +378,11 @@ export default function CheckoutPage() {
                           </div>
                           <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Coordinación por WhatsApp</h3>
                           <p className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto font-medium">
-                            Al confirmar, te contactaremos por WhatsApp para coordinar el medio de pago preferido y los detalles finales del despacho.
+                            Al confirmar, te contactaremos por WhatsApp para coordinar el medio de pago preferido.
                           </p>
+                          <div className="p-3 bg-emerald-100 text-emerald-800 rounded-xl text-[10px] font-black uppercase tracking-widest inline-block mx-auto">
+                            🤑 10% OFF pagando en EFECTIVO en el local
+                          </div>
                         </div>
 
                         <div className="space-y-2">
@@ -474,7 +477,7 @@ export default function CheckoutPage() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 text-center leading-relaxed">
                       {hasWholesale 
                         ? '¡Pedido Mayorista Confirmado! Tenés despacho bonificado.' 
-                        : '¡Felicitaciones! Superaste los $50.000 y el despacho es gratuito.'}
+                        : '¡Felicitaciones! Superaste los $200.000 y el despacho es gratuito.'}
                     </p>
                   </div>
                 ) : (

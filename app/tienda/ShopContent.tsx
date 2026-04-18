@@ -205,7 +205,7 @@ export default function ShopContent() {
                   <div className="relative z-10">
                     <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-80">Promoción</p>
                     <p className="text-xl font-black uppercase tracking-tighter leading-none mb-4">Envío Gratis</p>
-                    <p className="text-[10px] font-medium opacity-80 mb-6">En compras superando los $50.000 a todo el país.</p>
+                    <p className="text-[10px] font-medium opacity-80 mb-6">En compras superando los $200.000 a todo el país.</p>
                     <button className="w-full py-3 bg-white text-sky-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
                       Saber más <ArrowRight size={12} />
                     </button>

@@ -9,8 +9,8 @@ export default function PromoBanner() {
   const [currentText, setCurrentText] = useState(0);
 
   const banners = [
-    { text: "🚚 ¡ENVÍO GRATIS en compras superiores a $50.000!", icon: <Truck size={14} />, color: "bg-sky-600" },
-    { text: "✨ 10% OFF pagando con transferencia bancaria", icon: <Sparkles size={14} />, color: "bg-emerald-600" },
+    { text: "🚚 ¡ENVÍO GRATIS en compras superiores a $200.000!", icon: <Truck size={14} />, color: "bg-sky-600" },
+    { text: "💵 10% OFF pagando en EFECTIVO en el local", icon: <Sparkles size={14} />, color: "bg-emerald-600" },
     { text: "🕒 Despachamos tu pedido en menos de 24hs hábiles", icon: <Clock size={14} />, color: "bg-amber-600" }
   ];
 
