@@ -10,6 +10,9 @@ if (!databaseUrl) {
 const sql = postgres(databaseUrl || 'postgresql://placeholder:5432/db', {
   ssl: 'require',
   prepare: false,
+  connect_timeout: 10,
+  idle_timeout: 20,
+  max_lifetime: 60 * 30, // 30 minutes
 });
 
 if (databaseUrl) {
