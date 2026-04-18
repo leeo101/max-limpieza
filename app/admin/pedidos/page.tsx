@@ -10,8 +10,11 @@ import {
   Clock, 
   CheckCircle, 
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  FileDown
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Order {
   id: string;
@@ -81,6 +84,108 @@ export default function AdminOrdersPage() {
     } catch {
       alert('Error al actualizar el estado del pedido');
     }
+  };
+
+  const generateOrderPDF = (order: Order) => {
+    const doc = new jsPDF();
+    const items = JSON.parse(order.items);
+    
+    // Header
+    doc.setFillColor(14, 79, 148); // Sky blue brand color
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MAX LIMPIEZA', 20, 25);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Comprobante de Pedido', 150, 25);
+    
+    // Order Info
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(10);
+    doc.text('NÚMERO DE PEDIDO:', 20, 55);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`#${order.id.slice(-6).toUpperCase()}`, 20, 65);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('FECHA:', 150, 55);
+    doc.setFont('helvetica', 'bold');
+    doc.text(new Date(order.created_at).toLocaleDateString('es-AR'), 150, 65);
+    
+    // Customer Info Section
+    doc.setFillColor(245, 245, 245);
+    doc.rect(20, 75, 170, 45, 'F');
+    
+    doc.setTextColor(14, 79, 148);
+    doc.setFontSize(11);
+    doc.text('DATOS DEL CLIENTE', 25, 85);
+    
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nombre:', 25, 95);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.customer_name, 60, 95);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Teléfono:', 25, 102);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.customer_phone, 60, 102);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dirección:', 25, 109);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.customer_address, 60, 109);
+
+    if (order.customer_notes) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Notas:', 25, 116);
+      doc.setFont('helvetica', 'normal');
+      doc.text(order.customer_notes, 60, 116);
+    }
+    
+    // Table of products
+    const tableData = items.map((item: any) => [
+      item.name,
+      item.quantity.toString(),
+      `$${item.price.toLocaleString('es-AR')}`,
+      `$${(item.price * item.quantity).toLocaleString('es-AR')}`
+    ]);
+    
+    autoTable(doc, {
+      startY: 130,
+      head: [['Producto', 'Cant.', 'Precio Unit.', 'Subtotal']],
+      body: tableData,
+      headStyles: { fillColor: [14, 79, 148], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      margin: { left: 20, right: 20 },
+      theme: 'striped'
+    });
+    
+    // Total
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFillColor(240, 249, 255);
+    doc.rect(130, finalY, 60, 15, 'F');
+    doc.setTextColor(14, 79, 148);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`TOTAL: $${order.total.toLocaleString('es-AR')}`, 135, finalY + 10);
+    
+    // Shipping method
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(9);
+    doc.text(`Método de Entrega: ${order.delivery_method === 'delivery' ? 'Envío a Domicilio' : 'Retiro en Local'}`, 20, finalY + 10);
+    
+    // Footer
+    doc.setFontSize(8);
+    doc.text('Gracias por elegir MAX Limpieza', 105, 285, { align: 'center' });
+    
+    doc.save(`Pedido_MAX_${order.id.slice(-6).toUpperCase()}.pdf`);
   };
 
   const filteredOrders = orders
@@ -201,11 +306,18 @@ export default function AdminOrdersPage() {
                           href={`https://wa.me/${whatsappNumber}?text=Hola%20${encodeURIComponent(order.customer_name)}!%20Te%20contactamos%20sobre%20tu%20pedido%20#${order.id.slice(-6)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-3 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10"
+                          className="flex items-center gap-2 px-4 py-3 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10 transition-all transform hover:scale-[1.02]"
                         >
                           <MessageCircle className="w-5 h-5" />
-                          Chat WhatsApp
+                          WhatsApp
                         </a>
+                        <button
+                          onClick={() => generateOrderPDF(order)}
+                          className="flex items-center gap-2 px-4 py-3 bg-sky-500 text-white rounded-xl text-sm font-bold hover:bg-sky-600 transition-all shadow-lg shadow-sky-500/10 transition-all transform hover:scale-[1.02]"
+                        >
+                          <FileDown className="w-5 h-5" />
+                          Descargar PDF
+                        </button>
                       </div>
                     </div>
 
