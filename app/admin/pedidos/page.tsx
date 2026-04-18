@@ -181,11 +181,26 @@ export default function AdminOrdersPage() {
     doc.setFontSize(9);
     doc.text(`Método de Entrega: ${order.delivery_method === 'delivery' ? 'Envío a Domicilio' : 'Retiro en Local'}`, 20, finalY + 10);
     
-    // Footer
-    doc.setFontSize(8);
-    doc.text('Gracias por elegir MAX Limpieza', 105, 285, { align: 'center' });
-    
-    doc.save(`Pedido_MAX_${order.id.slice(-6).toUpperCase()}.pdf`);
+    try {
+      // Footer
+      doc.setFontSize(8);
+      doc.text('Gracias por elegir MAX Limpieza', 105, 285, { align: 'center' });
+      
+      // Use Blob approach for better compatibility and explicit MIME type
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Comprobante_MAX_${order.id.slice(-6).toUpperCase()}.pdf`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error al generar el PDF. Por favor, intentá nuevamente.');
+    }
   };
 
   const filteredOrders = orders
