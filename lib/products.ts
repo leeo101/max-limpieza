@@ -200,6 +200,7 @@ export async function createOrder(data: {
 export async function getAllOrders(): Promise<Order[]> { return (await sql`SELECT * FROM orders ORDER BY created_at DESC`) as Order[]; }
 export async function getOrderById(id: string): Promise<Order | null> { const result = await sql`SELECT * FROM orders WHERE id = ${id}`; return (result[0] as Order) || null; }
 export async function updateOrderStatus(id: string, status: string): Promise<boolean> { try { await sql`UPDATE orders SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`; return true; } catch (error) { return false; } }
+export async function deleteOrder(id: string): Promise<boolean> { try { await sql`DELETE FROM orders WHERE id = ${id}`; return true; } catch (error) { return false; } }
 export async function getRecentOrders(limit = 10): Promise<Order[]> { return (await sql`SELECT * FROM orders ORDER BY created_at DESC LIMIT ${limit}`) as Order[]; }
 
 export async function getStats() {

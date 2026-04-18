@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createOrder, getAllOrders, getOrderById, updateOrderStatus, getStats, getRecentOrders, getLowStockProducts } from '@/lib/products';
+import { createOrder, getAllOrders, getOrderById, updateOrderStatus, deleteOrder, getStats, getRecentOrders, getLowStockProducts } from '@/lib/products';
 import { sendOrderConfirmationToCustomer, sendOrderNotification } from '@/lib/email';
 import { verifyToken } from '@/lib/auth';
 
@@ -139,18 +139,53 @@ export async function PATCH(request: Request) {
     const { id, status } = body;
 
     if (!id || !status) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Missing id or status' }, { status: 400 });
     }
 
     const success = await updateOrderStatus(id, status);
     
     if (!success) {
-      return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Order not found or could not be updated' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, id });
   } catch (error) {
     console.error('PATCH Order Error:', error);
     return NextResponse.json({ success: false, error: 'Error updating order' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
+
+    if (!decoded || decoded.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Missing order ID' }, { status: 400 });
+    }
+
+    const success = await deleteOrder(id);
+    
+    if (!success) {
+      return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('DELETE Order Error:', error);
+    return NextResponse.json({ success: false, error: 'Error deleting order' }, { status: 500 });
   }
 }

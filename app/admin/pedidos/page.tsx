@@ -11,7 +11,8 @@ import {
   CheckCircle, 
   XCircle,
   AlertTriangle,
-  FileDown
+  FileDown,
+  Trash2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -69,20 +70,44 @@ export default function AdminOrdersPage() {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     const token = localStorage.getItem('adminToken');
     try {
-      const response = await fetch(`/api/orders?id=${orderId}`, {
-        method: 'PUT',
+      const response = await fetch('/api/orders', {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ id: orderId, status: newStatus }),
       });
       const result = await response.json();
       if (result.success) {
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      } else {
+        alert(result.error || 'Error al actualizar el estado');
       }
     } catch {
-      alert('Error al actualizar el estado del pedido');
+      alert('Error al conectar con el servidor');
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este pedido? Esta acción no se puede deshacer.')) return;
+    
+    const token = localStorage.getItem('adminToken');
+    try {
+      const response = await fetch(`/api/orders?id=${orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+      } else {
+        alert(result.error || 'Error al eliminar el pedido');
+      }
+    } catch {
+      alert('Error al conectar con el servidor');
     }
   };
 
@@ -396,37 +421,48 @@ export default function AdminOrdersPage() {
                     </div>
                   </div>
 
-                  {/* Actions Bar */}
-                  <div className="mt-8 pt-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-gray-400">Cambiar estado:</span>
-                      <div className="flex gap-1">
-                        {[
-                          { id: 'pending', icon: <Clock className="w-3.5 h-3.5" />, color: 'hover:bg-amber-100 hover:text-amber-700' },
-                          { id: 'confirmed', icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'hover:bg-sky-100 hover:text-sky-700' },
-                          { id: 'delivered', icon: <Truck className="w-3.5 h-3.5" />, color: 'hover:bg-emerald-100 hover:text-emerald-700' },
-                          { id: 'cancelled', icon: <XCircle className="w-3.5 h-3.5" />, color: 'hover:bg-rose-100 hover:text-rose-700' }
-                        ].map(btn => (
-                          <button
-                            key={btn.id}
-                            onClick={() => updateOrderStatus(order.id, btn.id)}
-                            className={`p-2.5 rounded-lg border border-gray-200 transition-all flex items-center justify-center ${
-                              order.status === btn.id ? 'bg-gray-900 text-white border-gray-900' : `bg-white text-gray-400 ${btn.color}`
-                            }`}
-                            title={`Marcar como ${btn.id}`}
-                          >
-                            {btn.icon}
-                          </button>
-                        ))}
+                    {/* Actions Bar */}
+                    <div className="mt-8 pt-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-gray-400">Cambiar estado:</span>
+                        <div className="flex gap-1">
+                          {[
+                            { id: 'pending', icon: <Clock className="w-3.5 h-3.5" />, color: 'hover:bg-amber-100 hover:text-amber-700' },
+                            { id: 'confirmed', icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'hover:bg-sky-100 hover:text-sky-700' },
+                            { id: 'delivered', icon: <Truck className="w-3.5 h-3.5" />, color: 'hover:bg-emerald-100 hover:text-emerald-700' },
+                            { id: 'cancelled', icon: <XCircle className="w-3.5 h-3.5" />, color: 'hover:bg-rose-100 hover:text-rose-700' }
+                          ].map(btn => (
+                            <button
+                              key={btn.id}
+                              onClick={() => updateOrderStatus(order.id, btn.id)}
+                              className={`p-2.5 rounded-lg border border-gray-200 transition-all flex items-center justify-center ${
+                                order.status === btn.id ? 'bg-gray-900 text-white border-gray-900' : `bg-white text-gray-400 ${btn.color}`
+                              }`}
+                              title={`Marcar como ${btn.id}`}
+                            >
+                              {btn.icon}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        {order.customer_notes && (
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold border border-amber-100">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            Notas: {order.customer_notes}
+                          </div>
+                        )}
+                        
+                        <button
+                          onClick={() => deleteOrder(order.id)}
+                          className="p-2.5 rounded-lg border border-gray-100 bg-white text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center justify-center"
+                          title="Eliminar pedido"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    {order.customer_notes && (
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold border border-amber-100">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        Notas: {order.customer_notes}
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             );
