@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, Trash2, ArrowRight, Minus, Plus } from 'lucide-react';
+import { ShoppingBag, Trash2, ArrowRight, Minus, Plus, Check } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import Drawer from './ui/Drawer';
 

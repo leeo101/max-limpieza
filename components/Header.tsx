@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Package,
+  TrendingUp,
 } from 'lucide-react';
 
 interface Product {
