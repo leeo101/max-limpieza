@@ -29,31 +29,45 @@ interface CartItem {
   image: string | null;
 }
 
+import { useStore } from '@/store/useStore';
+
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    // Get cart count from localStorage
-    const updateCartCount = () => {
-      try {
-        const cartStr = localStorage.getItem('cart');
-        const cart: CartItem[] = cartStr ? JSON.parse(cartStr) : [];
-        setCartCount(Array.isArray(cart) ? cart.reduce((sum: number, item: CartItem) => sum + item.quantity, 0) : 0);
-      } catch (e) {
-        console.error('Error parsing cart:', e);
-        setCartCount(0);
-      }
-    };
+  // Zustand Store
+  const { cart, setMiniCartOpen } = useStore();
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-    updateCartCount();
-    window.addEventListener('cartUpdated', updateCartCount);
-    return () => window.removeEventListener('cartUpdated', updateCartCount);
-  }, []);
+  useEffect(() => {
+    if (searchQuery.length > 1) {
+      const search = async () => {
+        try {
+          const res = await fetch(`/api/products`);
+          const data = await res.json();
+          if (data.success) {
+            const matches = (data.data as Product[])
+              .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+              .slice(0, 5);
+            setSuggestions(matches);
+            setShowSuggestions(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      const debounceTimer = setTimeout(search, 300);
+      return () => clearTimeout(debounceTimer);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
     // Check if user is logged in
@@ -113,17 +127,52 @@ export default function Header() {
           </Link>
 
           {/* Search bar - desktop */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-8">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-8 relative">
             <div className="relative w-full">
               <input
                 type="text"
                 value={searchQuery}
+                onFocus={() => searchQuery.length > 1 && setShowSuggestions(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar productos..."
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-5 py-3 pl-12 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700 transition-all placeholder:text-gray-400"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
+
+            {/* Suggestions Dropdown */}
+            <AnimatePresence>
+              {showSuggestions && suggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-14 left-0 w-full bg-white rounded-3xl shadow-2xl border border-gray-100 p-3 z-[100]"
+                >
+                  <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Sugerencias</p>
+                  {suggestions.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        router.push(`/producto/${p.id}`);
+                        setShowSuggestions(false);
+                        setSearchQuery('');
+                      }}
+                      className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-2xl transition-all group"
+                    >
+                      <div className="w-10 h-10 bg-gray-50 rounded-lg flex-shrink-0 relative overflow-hidden">
+                        {p.image ? (
+                          <Image src={p.image} alt={p.name} fill className="object-contain p-1" />
+                        ) : (
+                          <Package className="w-full h-full p-2 text-gray-200" />
+                        )}
+                      </div>
+                      <span className="text-sm font-bold text-gray-700 group-hover:text-sky-600 transition-colors uppercase tracking-tight">{p.name}</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </form>
 
           {/* Desktop navigation */}
@@ -198,14 +247,17 @@ export default function Header() {
 
           {/* Cart and mobile menu button */}
           <div className="flex items-center gap-4">
-            <Link href="/carrito" className="relative p-2 text-gray-700 hover:text-sky-600 transition-colors">
-              <ShoppingCart className="w-6 h-6" />
+            <button 
+              onClick={() => setMiniCartOpen(true)}
+              className="relative p-2 text-gray-700 hover:text-sky-600 transition-colors cursor-pointer group"
+            >
+              <ShoppingCart className="w-6 h-6 group-hover:scale-110 transition-transform" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black animate-in zoom-in duration-300">
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* Mobile menu button */}
             <button

@@ -44,6 +44,8 @@ export const viewport: Viewport = {
 
 import FloatingSupport from "@/components/FloatingSupport";
 import ToastProvider from "@/components/ToastProvider";
+import MiniCart from "@/components/MiniCart";
+import PromoBanner from "@/components/PromoBanner";
 
 export default function RootLayout({
   children,
@@ -53,9 +55,11 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="antialiased scroll-smooth" suppressHydrationWarning>
+        <PromoBanner />
         {children}
         <ToastProvider />
         <FloatingSupport />
+        <MiniCart />
       </body>
     </html>
   );

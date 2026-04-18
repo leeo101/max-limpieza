@@ -230,3 +230,16 @@ export async function getStats() {
 export async function getLowStockProducts(limit = 5) {
   return (await sql`SELECT id, name, stock FROM products WHERE stock < 10 AND active = 1 ORDER BY stock ASC LIMIT ${limit}`) as { id: string, name: string, stock: number }[];
 }
+
+export async function getDailySalesStats(days = 30) {
+  return (await sql`
+    SELECT 
+      DATE(created_at) as date,
+      CAST(COUNT(*) as INTEGER) as count,
+      CAST(SUM(total) as FLOAT) as revenue
+    FROM orders
+    WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${days}
+    GROUP BY DATE(created_at)
+    ORDER BY DATE(created_at) ASC
+  `) as { date: string, count: number, revenue: number }[];
+}

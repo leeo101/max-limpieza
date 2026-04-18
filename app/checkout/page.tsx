@@ -4,20 +4,25 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string | null;
-}
+import { useStore } from '@/store/useStore';
+import { 
+  User, 
+  MapPin, 
+  ChevronRight, 
+  CheckCircle2, 
+  Package, 
+  Truck, 
+  ArrowLeft,
+  CreditCard
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const { cart, clearCart } = useStore();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -48,68 +53,51 @@ export default function CheckoutPage() {
   ];
 
   useEffect(() => {
-    const safeParse = (key: string, fallback: any) => {
-      try {
-        const item = localStorage.getItem(key);
-        if (item && item !== 'undefined') return JSON.parse(item);
-      } catch (e) {
-        console.error(`Error parsing ${key}:`, e);
-      }
-      return fallback;
-    };
-
-    const cartData = safeParse('cart', []);
-    if (cartData.length === 0) {
-      router.push('/carrito');
+    if (cart.length === 0 && !loading) {
+      router.push('/tienda');
       return;
     }
-    setCart(cartData);
 
-    // Auto-fill form if user is logged in
-    const userData = safeParse('userData', null);
+    const userData = JSON.parse(localStorage.getItem('userData') || 'null');
     if (userData) {
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         customer_name: userData.name || '',
         customer_phone: userData.phone || '',
         customer_email: userData.email || '',
-        customer_dni: '',
         customer_address: userData.address || '',
         customer_city: userData.city || '',
         customer_province: userData.province || 'San Juan',
         customer_postal_code: userData.postal_code || '',
-        delivery_method: 'delivery',
-        shipping_company: 'Correo Argentino',
-        customer_notes: '',
-      });
+      }));
     }
 
     setLoading(false);
-  }, [router]);
+  }, [cart, router, loading]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const freeShippingThreshold = 50000;
+  const isFreeShipping = total >= freeShippingThreshold;
+
+  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 3));
+  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (currentStep < 3) {
+      nextStep();
+      return;
+    }
+
     setSubmitting(true);
-
     try {
-      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-      // Get user token if logged in
       const userToken = localStorage.getItem('userToken');
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (userToken) {
-        headers['Authorization'] = `Bearer ${userToken}`;
-      }
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (userToken) headers['Authorization'] = `Bearer ${userToken}`;
 
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -126,309 +114,362 @@ export default function CheckoutPage() {
       });
 
       const result = await response.json();
-
       if (result.success) {
-        // Clear cart
-        localStorage.setItem('cart', '[]');
-        window.dispatchEvent(new Event('cartUpdated'));
-
-        // Redirect to success page
+        clearCart();
         router.push(`/pedido-confirmado?id=${result.id}`);
       } else {
         alert('Error al procesar tu pedido. Intenta nuevamente.');
       }
     } catch (error) {
       console.error('Error submitting order:', error);
-      alert('Error al procesar tu pedido. Intenta nuevamente.');
+      alert('Error al conectar con el servidor.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
+          <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
         </div>
         <Footer />
       </div>
     );
   }
 
+  const steps = [
+    { id: 1, label: 'Tus Datos', icon: <User size={18} /> },
+    { id: 2, label: 'Entrega', icon: <Truck size={18} /> },
+    { id: 3, label: 'Pago', icon: <CreditCard size={18} /> }
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
 
-      <div className="flex-1 bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Finalizar Compra</h1>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Checkout form */}
-            <div className="lg:col-span-2">
-              <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Datos del Cliente</h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre completo *
-                    </label>
-                    <input
-                      type="text"
-                      name="customer_name"
-                      value={formData.customer_name}
-                      onChange={handleChange}
-                      required
-                      className="input-field"
-                      placeholder="Tu nombre completo"
-                    />
+      <main className="flex-1 py-8 sm:py-12">
+        <div className="max-w-6xl mx-auto px-4">
+          
+          {/* Header Progress */}
+          <div className="mb-12">
+            <h1 className="text-3xl sm:text-4xl font-black text-gray-900 mb-8 uppercase tracking-tighter">Finalizar Compra</h1>
+            
+            <div className="flex items-center justify-between max-w-2xl mx-auto relative px-2 sm:px-0">
+              {/* Line background */}
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-1/2 z-0" />
+              {/* Active line progress */}
+              <div 
+                className="absolute top-1/2 left-0 h-0.5 bg-sky-500 -translate-y-1/2 z-0 transition-all duration-500" 
+                style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+              />
+              
+              {steps.map((step) => (
+                <div key={step.id} className="relative z-10 flex flex-col items-center group">
+                  <div className={`
+                    w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2
+                    ${currentStep >= step.id 
+                      ? 'bg-sky-500 border-sky-500 text-white shadow-lg shadow-sky-500/20' 
+                      : 'bg-white border-gray-200 text-gray-400'}
+                  `}>
+                    {currentStep > step.id ? <CheckCircle2 size={20} /> : step.icon}
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Teléfono *
-                    </label>
-                    <input
-                      type="tel"
-                      name="customer_phone"
-                      value={formData.customer_phone}
-                      onChange={handleChange}
-                      required
-                      className="input-field"
-                      placeholder="Tu número de teléfono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      DNI (para el correo) *
-                    </label>
-                    <input
-                      type="text"
-                      name="customer_dni"
-                      value={formData.customer_dni}
-                      onChange={handleChange}
-                      required
-                      className="input-field"
-                      placeholder="Tu número de DNI"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email * <span className="text-gray-500 font-normal">(para enviarte el comprobante)</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="customer_email"
-                      value={formData.customer_email}
-                      onChange={handleChange}
-                      required
-                      className="input-field"
-                      placeholder="tu@email.com"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">📧 Recibirás un email de confirmación con el detalle de tu pedido</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ¿Cómo querés recibir tu pedido? *
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, delivery_method: 'delivery' })}
-                        className={`p-4 rounded-lg border-2 transition-all text-left ${formData.delivery_method === 'delivery'
-                          ? 'border-sky-500 bg-sky-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                          }`}
-                      >
-                        <div className="text-2xl mb-2">📦</div>
-                        <div className="font-semibold text-sm">Envío a Domicilio</div>
-                        <div className="text-xs text-gray-500 mt-1">Te lo llevamos</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, delivery_method: 'pickup' })}
-                        className={`p-4 rounded-lg border-2 transition-all text-left ${formData.delivery_method === 'pickup'
-                          ? 'border-sky-500 bg-sky-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                          }`}
-                      >
-                        <div className="text-2xl mb-2">🏪</div>
-                        <div className="font-semibold text-sm">Retiro en Local</div>
-                        <div className="text-xs text-gray-500 mt-1">Pasás a buscar</div>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Provincia *
-                      </label>
-                      <select
-                        name="customer_province"
-                        value={formData.customer_province}
-                        onChange={handleChange}
-                        required
-                        className="input-field"
-                      >
-                        {PROVINCES.map(p => (
-                          <option key={p} value={p}>{p}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ciudad / Localidad *
-                      </label>
-                      <input
-                        type="text"
-                        name="customer_city"
-                        value={formData.customer_city}
-                        onChange={handleChange}
-                        required
-                        className="input-field"
-                        placeholder="Ej: San Juan Capital"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Código Postal *
-                      </label>
-                      <input
-                        type="text"
-                        name="customer_postal_code"
-                        value={formData.customer_postal_code}
-                        onChange={handleChange}
-                        required
-                        className="input-field"
-                        placeholder="Ej: 5400"
-                      />
-                    </div>
-                    {formData.delivery_method === 'delivery' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Empresa de Transporte Preferida *
-                        </label>
-                        <select
-                          name="shipping_company"
-                          value={formData.shipping_company}
-                          onChange={handleChange}
-                          required
-                          className="input-field"
-                        >
-                          {SHIPPING_COMPANIES.map(c => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {formData.delivery_method === 'delivery' ? 'Calle y Número *' : 'Dirección (opcional)'}
-                    </label>
-                    <input
-                      type="text"
-                      name="customer_address"
-                      value={formData.customer_address}
-                      onChange={handleChange}
-                      required
-                      className="input-field"
-                      placeholder={formData.delivery_method === 'delivery' ? 'Ej: Av. Libertador 1234' : 'Tu dirección (opcional)'}
-                    />
-                    {formData.delivery_method === 'pickup' && (
-                      <p className="text-xs text-gray-500 mt-1">📍 Te avisaremos cuando esté listo para retirar en nuestro local de San Juan</p>
-                    )}
-                    {formData.delivery_method === 'delivery' && (
-                      <div className="mt-2 p-3 bg-amber-50 border border-amber-100 rounded-lg">
-                        <p className="text-xs text-amber-800">
-                          <strong>🚚 Envío:</strong> El costo del transporte <strong>no está incluido</strong> en este pago. Se abona en destino al recibir o retirar el paquete según las tarifas de {formData.shipping_company}.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Notas adicionales (opcional)
-                    </label>
-                    <textarea
-                      name="customer_notes"
-                      value={formData.customer_notes}
-                      onChange={handleChange}
-                      rows={3}
-                      className="input-field"
-                      placeholder="Instrucciones especiales, horario preferido, etc."
-                    />
-                  </div>
+                  <span className={`
+                    absolute top-12 whitespace-nowrap text-[10px] sm:text-xs font-black uppercase tracking-widest transition-colors
+                    ${currentStep >= step.id ? 'text-sky-600' : 'text-gray-400'}
+                  `}>
+                    {step.label}
+                  </span>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={`btn-primary w-full mt-6 ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {submitting ? 'Procesando...' : 'Confirmar Pedido'}
-                </button>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Form Section */}
+            <div className="lg:col-span-8">
+              <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="p-6 sm:p-10"
+                  >
+                    {currentStep === 1 && (
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-8">1. Datos Personales</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Nombre Completo *</label>
+                          <input
+                            type="text"
+                            name="customer_name"
+                            value={formData.customer_name}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700"
+                            placeholder="Ej: Juan Pérez"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Teléfono Móvil *</label>
+                          <input
+                            type="tel"
+                            name="customer_phone"
+                            value={formData.customer_phone}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700"
+                            placeholder="Ej: 264 1234567"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">DNI (Para el transporte) *</label>
+                          <input
+                            type="text"
+                            name="customer_dni"
+                            value={formData.customer_dni}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700"
+                            placeholder="Ej: 35.123.456"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Correo Electrónico *</label>
+                          <input
+                            type="email"
+                            name="customer_email"
+                            value={formData.customer_email}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700"
+                            placeholder="tu@email.com"
+                          />
+                        </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {currentStep === 2 && (
+                      <div className="space-y-8">
+                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-8">2. Entrega y Envío</h2>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, delivery_method: 'delivery' }))}
+                            className={`p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 ${formData.delivery_method === 'delivery' ? 'border-sky-500 bg-sky-50 ring-4 ring-sky-500/10' : 'border-gray-100 bg-gray-50 grayscale opacity-60'}`}
+                          >
+                            <Truck className={formData.delivery_method === 'delivery' ? 'text-sky-500' : 'text-gray-400'} size={32} />
+                            <span className="font-black text-xs uppercase tracking-widest">Envío a domicilio</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, delivery_method: 'pickup' }))}
+                            className={`p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 ${formData.delivery_method === 'pickup' ? 'border-sky-500 bg-sky-50 ring-4 ring-sky-500/10' : 'border-gray-100 bg-gray-50 grayscale opacity-60'}`}
+                          >
+                            <Package className={formData.delivery_method === 'pickup' ? 'text-sky-500' : 'text-gray-400'} size={32} />
+                            <span className="font-black text-xs uppercase tracking-widest">Retiro en local</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Provincia *</label>
+                            <select
+                              name="customer_province"
+                              value={formData.customer_province}
+                              onChange={handleChange}
+                              className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700 appearance-none"
+                            >
+                              {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Ciudad *</label>
+                            <input
+                              type="text"
+                              name="customer_city"
+                              value={formData.customer_city}
+                              onChange={handleChange}
+                              required
+                              className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700"
+                              placeholder="Ej: Capital"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">C.P. *</label>
+                            <input
+                              type="text"
+                              name="customer_postal_code"
+                              value={formData.customer_postal_code}
+                              onChange={handleChange}
+                              required
+                              className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700"
+                              placeholder="Ej: 5400"
+                            />
+                          </div>
+                          {formData.delivery_method === 'delivery' && (
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Transporte *</label>
+                              <select
+                                name="shipping_company"
+                                value={formData.shipping_company}
+                                onChange={handleChange}
+                                className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700 appearance-none"
+                              >
+                                {SHIPPING_COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Calle y Altura *</label>
+                          <input
+                            type="text"
+                            name="customer_address"
+                            value={formData.customer_address}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700"
+                            placeholder="Ej: Av. Rioja 123 Sur"
+                          />
+                        </div>
+
+                        {formData.delivery_method === 'delivery' && !isFreeShipping && (
+                          <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800 text-xs font-bold flex gap-3">
+                            <Truck size={20} className="flex-shrink-0" />
+                            <p>El envío se abona al recibir o retirar en sucursal según las tarifas de {formData.shipping_company}.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {currentStep === 3 && (
+                      <div className="space-y-8">
+                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-8">3. Pago y Confirmación</h2>
+                        
+                        <div className="p-8 bg-sky-50 rounded-3xl border border-sky-100 text-center space-y-4">
+                          <div className="w-16 h-16 bg-sky-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg">
+                            <MessageCircle size={32} />
+                          </div>
+                          <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Coordinación por WhatsApp</h3>
+                          <p className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto font-medium">
+                            Al confirmar, te contactaremos por WhatsApp para coordinar el medio de pago preferido y los detalles finales del despacho.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Notas para nosotros</label>
+                          <textarea
+                            name="customer_notes"
+                            value={formData.customer_notes}
+                            onChange={handleChange}
+                            rows={3}
+                            className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700 resize-none"
+                            placeholder="¿Alguna instrucción especial?"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step buttons */}
+                    <div className="flex flex-col sm:flex-row gap-4 mt-12 pt-8 border-t border-gray-100">
+                      {currentStep > 1 && (
+                        <button
+                          type="button"
+                          onClick={prevStep}
+                          className="flex items-center justify-center gap-2 px-8 py-4 text-gray-400 font-black uppercase tracking-widest text-xs hover:text-gray-900 transition-colors"
+                        >
+                          <ArrowLeft size={16} />
+                          Volver
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className={`flex-1 flex items-center justify-center gap-3 py-5 bg-sky-500 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-sky-500/20 active:scale-95 transition-all
+                          ${submitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-sky-600'}
+                        `}
+                      >
+                        {currentStep < 3 ? (
+                          <>Siguiente Paso <ChevronRight size={18} /></>
+                        ) : (
+                          <>{submitting ? 'Procesando...' : 'Confirmar Pedido'} <CheckCircle2 size={18} /></>
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
               </form>
             </div>
 
-            {/* Order summary */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-md p-6 sticky top-24">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Tu Pedido</h2>
-
-                <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
+            {/* Sidebar Summary */}
+            <div className="lg:col-span-4 sticky top-24">
+              <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8 space-y-6">
+                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter border-b border-gray-50 pb-4">Detalle del Pedido</h3>
+                
+                <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <div className="flex-1">
-                        <span className="font-medium">{item.name}</span>
-                        <span className="text-gray-500 ml-2">x{item.quantity}</span>
+                    <div key={item.id} className="flex justify-between items-center gap-4 group">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-black text-gray-900 uppercase tracking-tight truncate">{item.name}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cant: {item.quantity}</p>
                       </div>
-                      <span className="font-semibold">
-                        ${(item.price * item.quantity).toLocaleString('es-AR')}
-                      </span>
+                      <span className="text-sm font-black text-sky-600">${(item.price * item.quantity).toLocaleString('es-AR')}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="border-t pt-3 space-y-2">
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>Subtotal:</span>
+                <div className="pt-6 border-t border-gray-100 space-y-2.5">
+                  <div className="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    <span>Subtotal</span>
                     <span>${total.toLocaleString('es-AR')}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>Envío:</span>
-                    <span className="font-medium text-amber-600">Pago en Destino</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Envío</span>
+                    <span className={`text-[10px] font-black uppercase tracking-tighter ${isFreeShipping ? 'text-emerald-500' : 'text-amber-500'}`}>
+                      {isFreeShipping ? '¡Bonificado!' : 'Pago en destino'}
+                    </span>
                   </div>
-                  <div className="flex justify-between text-xl font-bold text-gray-900 border-t pt-2">
-                    <span>Total a pagar hoy:</span>
-                    <span className="text-sky-600">${total.toLocaleString('es-AR')}</span>
+                  <div className="pt-4 mt-2 border-t-2 border-gray-50 flex justify-between items-center">
+                    <span className="text-sm font-black text-gray-900 uppercase tracking-widest">Total</span>
+                    <span className="text-3xl font-black text-sky-600 tracking-tighter">${total.toLocaleString('es-AR')}</span>
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 bg-sky-50 rounded-lg">
-                  <p className="text-sm text-sky-800">
-                    <strong>✓</strong> Te contactaremos para confirmar tu pedido y coordinar la entrega
-                  </p>
-                </div>
+                {isFreeShipping ? (
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 text-center leading-relaxed">
+                      ¡Felicitaciones! Superaste los $50.000 y el despacho es gratuito.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      <span>Para envío gratis</span>
+                      <span>${(freeShippingThreshold - total).toLocaleString('es-AR')}</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-sky-500 transition-all duration-1000"
+                        style={{ width: `${(total / freeShippingThreshold) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       <Footer />
     </div>

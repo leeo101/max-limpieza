@@ -142,32 +142,26 @@ export default function HomePage() {
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Categorías</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {categories.map((category) => {
               const content = getCategoryContent(category.slug);
-              const isImage = typeof content === 'string';
-              const Icon = !isImage ? content as LucideIcon : null;
-
               return (
                 <Link
                   key={category.id}
                   href={`/tienda?category=${category.slug}`}
-                  className="group flex flex-col items-center text-center hover:-translate-y-2 transition-all duration-300"
+                  className="group flex flex-col items-center text-center"
                 >
-                  <div className="w-24 h-24 mb-3 bg-white rounded-2xl shadow-md border border-gray-100 flex items-center justify-center overflow-hidden group-hover:shadow-xl group-hover:border-sky-200 transition-all duration-300">
-                    {isImage ? (
-                      <img
-                        src={content as string}
-                        alt={category.name}
-                        className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-110"
-                      />
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 bg-gray-50 rounded-[32px] border border-gray-100 flex items-center justify-center overflow-hidden group-hover:bg-white group-hover:shadow-2xl group-hover:shadow-sky-500/10 group-hover:border-sky-100 transition-all duration-500 transform group-hover:-translate-y-2">
+                    {typeof content === 'string' ? (
+                      <img src={content} alt={category.name} className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500" />
                     ) : (
-                      <div className="w-12 h-12 bg-gradient-to-br from-sky-100 to-emerald-100 rounded-xl flex items-center justify-center">
-                        {Icon && <Icon className="w-7 h-7 text-sky-600" />}
+                      <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center">
+                        {/* @ts-ignore */}
+                        <content className="w-6 h-6 text-sky-500" />
                       </div>
                     )}
                   </div>
-                  <h3 className="font-semibold text-gray-800 text-sm group-hover:text-sky-600 transition-colors duration-300">{category.name}</h3>
+                  <h3 className="font-black text-gray-900 text-[10px] uppercase tracking-widest group-hover:text-sky-600 transition-colors">{category.name}</h3>
                 </Link>
               );
             })}
@@ -176,23 +170,24 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products */}
-      <section className="py-12 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Productos Destacados</h2>
-            <Link href="/tienda" className="text-sky-600 hover:text-sky-700 font-medium">
-              Ver todos →
+      <section className="py-20 bg-gray-50/50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+            <div>
+              <p className="text-[10px] font-black text-sky-500 uppercase tracking-[0.3em] mb-3">Colección Premium</p>
+              <h2 className="text-4xl md:text-5xl font-black text-gray-900 uppercase tracking-tighter leading-none">Productos Destacados</h2>
+            </div>
+            <Link href="/tienda" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-sky-600 transition-all group">
+              Ver Catálogo Completo <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <ProductSkeleton key={i} />
-              ))}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => <ProductSkeleton key={i} />)}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
               {featuredProducts.slice(0, 8).map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}
@@ -202,20 +197,26 @@ export default function HomePage() {
       </section>
 
       {/* Bestsellers */}
-      <section className="py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">🔥 Más Vendidos</h2>
-            <Link href="/tienda" className="text-sky-600 hover:text-sky-700 font-medium">
-              Ver todos →
-            </Link>
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+            <div>
+              <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-3">Los Favoritos</p>
+              <h2 className="text-4xl md:text-5xl font-black text-gray-900 uppercase tracking-tighter leading-none">Más Vendidos 🔥</h2>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {bestsellerProducts.slice(0, 8).map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => <ProductSkeleton key={i} />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+              {bestsellerProducts.slice(0, 8).map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createOrder, getAllOrders, getOrderById, updateOrderStatus, deleteOrder, getStats, getRecentOrders, getLowStockProducts } from '@/lib/products';
+import { createOrder, getAllOrders, getOrderById, updateOrderStatus, deleteOrder, getStats, getRecentOrders, getLowStockProducts, getDailySalesStats } from '@/lib/products';
 import { sendOrderConfirmationToCustomer, sendOrderNotification } from '@/lib/email';
 import { verifyToken } from '@/lib/auth';
 
@@ -44,6 +44,12 @@ export async function GET(request: Request) {
     if (orderAction === 'inventory') {
       const products = await getLowStockProducts(5);
       return NextResponse.json({ success: true, data: products });
+    }
+
+    if (orderAction === 'chart') {
+      const days = parseInt(searchParams.get('days') || '30', 10);
+      const data = await getDailySalesStats(days);
+      return NextResponse.json({ success: true, data });
     }
 
     const orders = await getAllOrders();

@@ -16,6 +16,8 @@ import {
   Mail,
   CheckCircle
 } from 'lucide-react';
+import SalesChart from '@/components/admin/SalesChart';
+
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
@@ -44,6 +46,7 @@ export default function AdminDashboardPage() {
   }
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Suggested monthly target for the progress bar
@@ -54,33 +57,22 @@ export default function AdminDashboardPage() {
       const token = localStorage.getItem('adminToken');
       
       try {
-        const [statsRes, ordersRes, inventoryRes] = await Promise.all([
-          fetch('/api/orders?action=stats', {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }),
-          fetch('/api/orders?action=recent&limit=10', {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }),
-          fetch('/api/orders?action=inventory', {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }),
+        const [statsRes, ordersRes, inventoryRes, chartRes] = await Promise.all([
+          fetch('/api/orders?action=stats', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/orders?action=recent&limit=10', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/orders?action=inventory', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/orders?action=chart&days=7', { headers: { 'Authorization': `Bearer ${token}` } }),
         ]);
 
         const statsData = await statsRes.json();
         const ordersData = await ordersRes.json();
         const inventoryData = await inventoryRes.json();
+        const chartDataRes = await chartRes.json();
 
-        if (statsData.success) {
-          setStats(statsData.data);
-        }
-
-        if (ordersData.success) {
-          setRecentOrders(ordersData.data);
-        }
-
-        if (inventoryData.success) {
-          setLowStockProducts(inventoryData.data);
-        }
+        if (statsData.success) setStats(statsData.data);
+        if (ordersData.success) setRecentOrders(ordersData.data);
+        if (inventoryData.success) setLowStockProducts(inventoryData.data);
+        if (chartDataRes.success) setChartData(chartDataRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -203,6 +195,21 @@ export default function AdminDashboardPage() {
           color="bg-orange-50"
           highlight={stats.lowStockCount > 0}
         />
+      </div>
+
+      {/* Analytics Chart Section */}
+      <div className="bg-white p-6 sm:p-8 rounded-[32px] shadow-sm border border-gray-100 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Rendimiento Semanal</h3>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">Ingresos vs Volumen de Pedidos</p>
+          </div>
+          <div className="flex bg-gray-50 p-1 rounded-xl">
+            <button className="px-4 py-2 bg-white shadow-sm rounded-lg text-[10px] font-black uppercase tracking-widest text-sky-600">7 Días</button>
+            <button className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400">30 Días</button>
+          </div>
+        </div>
+        <SalesChart data={chartData} loading={loading} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useStore } from '@/store/useStore';
+
 
 interface Order {
   id: string;
@@ -276,6 +278,38 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const exportOrdersToCSV = () => {
+    const headers = ['ID', 'Fecha', 'Cliente', 'WhatsApp', 'DNI', 'Metodo', 'Total', 'Estado', 'Items'];
+    const rows = filteredOrders.map(o => {
+      const items = JSON.parse(o.items).map((i: any) => `${i.quantity}x ${i.name}`).join('; ');
+      return [
+        o.id.slice(-6).toUpperCase(),
+        new Date(o.created_at).toLocaleDateString('es-AR'),
+        o.customer_name,
+        o.customer_phone,
+        o.customer_dni || '-',
+        o.delivery_method,
+        o.total,
+        o.status,
+        items
+      ];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.map(field => `"${field}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Pedidos_MAX_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredOrders = orders
     .filter(order => filter === 'all' || order.status === filter)
     .filter(order => 
@@ -304,21 +338,31 @@ export default function AdminOrdersPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Gestión de Pedidos</h1>
           <p className="text-gray-500 mt-1 text-sm">Controlá y procesá las compras de tus clientes</p>
         </div>
-        <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-sky-500 transition-colors" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, ID o teléfono..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all bg-white text-sm"
-          />
+        <div className="flex gap-2">
+          <button 
+            onClick={exportOrdersToCSV}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-50 active:scale-95 transition-all"
+          >
+            <FileDown className="w-4 h-4" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </button>
         </div>
+      </div>
+
+      <div className="relative group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-sky-500 transition-colors" />
+        <input
+          type="text"
+          placeholder="Buscar por nombre, ID o teléfono..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-12 pr-4 py-4 rounded-2xl border-none focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-sm bg-white text-sm font-bold text-gray-700"
+        />
       </div>
 
       {/* Filters — scrollable on mobile */}

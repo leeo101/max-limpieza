@@ -1,10 +1,5 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { LayoutDashboard, Package, Tags, ShoppingCart, LogOut, Globe } from 'lucide-react';
+import { Search, LayoutDashboard, Package, Tags, ShoppingCart, LogOut, Globe, Bell } from 'lucide-react';
+import { useStore } from '@/store/useStore';
 
 export default function AdminLayout({
   children,
@@ -14,11 +9,12 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
+  const { pendingOrdersCount, setPendingOrdersCount } = useStore();
+  const [globalSearch, setGlobalSearch] = useState('');
 
   useEffect(() => {
     // Skip token check on login page
     if (pathname === '/admin/login') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }
@@ -29,23 +25,56 @@ export default function AdminLayout({
       return;
     }
 
-    // Verify token is still valid
-    fetch('/api/orders?action=stats', {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-      .then(res => {
+    // Verify token and fetch initial stats
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/orders?action=stats', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
         if (res.status === 401) {
           localStorage.removeItem('adminToken');
-          document.cookie = 'adminToken=; path=/; max-age=0';
           router.push('/admin/login');
         } else {
+          const data = await res.json();
+          if (data.success) {
+            setPendingOrdersCount(data.data.pendingOrders);
+          }
           setLoading(false);
         }
-      })
-      .catch(() => {
+      } catch (e) {
         setLoading(false);
-      });
-  }, [router, pathname]);
+      }
+    };
+
+    fetchStats();
+
+    // Polling every 10 minutes as requested
+    const pollInterval = setInterval(fetchStats, 10 * 60 * 1000);
+
+    // Keyboard Shortcuts for Admin
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if Shift is pressed and not in an input
+      if (e.shiftKey && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        switch (e.key.toUpperCase()) {
+          case 'D': router.push('/admin/dashboard'); break;
+          case 'P': router.push('/admin/productos'); break;
+          case 'C': router.push('/admin/categorias'); break;
+          case 'O': router.push('/admin/pedidos'); break;
+          case 'S': 
+            const searchInput = document.querySelector('header input') as HTMLInputElement;
+            searchInput?.focus();
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [router, pathname, setPendingOrdersCount]);
 
   const logout = () => {
     localStorage.removeItem('adminToken');
@@ -101,14 +130,23 @@ export default function AdminLayout({
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
                   pathname === item.path
                     ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                <span className="font-semibold">{item.name}</span>
+                <div className="flex items-center gap-3">
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-semibold">{item.name}</span>
+                </div>
+                {item.name === 'Pedidos' && pendingOrdersCount > 0 && (
+                  <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black ${
+                    pathname === item.path ? 'bg-white text-sky-600' : 'bg-rose-500 text-white'
+                  }`}>
+                    {pendingOrdersCount}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
@@ -148,17 +186,32 @@ export default function AdminLayout({
               </div>
             </div>
 
-            {/* Desktop: Page title placeholder (optional) */}
-            <div className="hidden lg:block" />
+            {/* Desktop: Global Search */}
+            <div className="hidden lg:flex flex-1 max-w-md mx-8 relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-sky-500 transition-colors" />
+              <input 
+                type="text"
+                placeholder="Búsqueda global..."
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-sky-500/20 transition-all"
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+              />
+            </div>
 
             {/* Right actions */}
             <div className="flex items-center gap-3">
+              <button className="relative p-2 text-gray-400 hover:text-sky-600 transition-colors">
+                <Bell size={20} />
+                {pendingOrdersCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full animate-ping" />
+                )}
+              </button>
               <Link
                 href="/"
                 className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-sky-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-sky-50"
               >
                 <Globe className="w-4 h-4" />
-                <span className="hidden sm:inline font-medium">Ver Tienda</span>
+                <span className="hidden sm:inline font-medium text-xs font-black uppercase tracking-widest">Tienda</span>
               </Link>
             </div>
           </div>
@@ -185,8 +238,13 @@ export default function AdminLayout({
                     : 'text-gray-400 active:bg-gray-50'
                 }`}
               >
-                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? 'bg-sky-50' : ''}`}>
+                <div className={`p-1.5 rounded-xl transition-colors relative ${isActive ? 'bg-sky-50' : ''}`}>
                   <item.icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
+                  {item.name === 'Pedidos' && pendingOrdersCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-500 text-white text-[8px] font-black flex items-center justify-center rounded-full border border-white">
+                      {pendingOrdersCount}
+                    </span>
+                  )}
                 </div>
                 <span className={`text-[9px] font-bold tracking-tight ${isActive ? 'text-sky-600' : 'text-gray-400'}`}>
                   {item.name}
