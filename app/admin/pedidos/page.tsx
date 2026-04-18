@@ -86,107 +86,150 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const generateOrderPDF = (order: Order) => {
+  const generateOrderPDF = async (order: Order) => {
     const doc = new jsPDF();
     const items = JSON.parse(order.items);
     
-    // Header
-    doc.setFillColor(14, 79, 148); // Sky blue brand color
-    doc.rect(0, 0, 210, 40, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('MAX LIMPIEZA', 20, 25);
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Comprobante de Pedido', 150, 25);
-    
-    // Order Info
-    doc.setTextColor(50, 50, 50);
-    doc.setFontSize(10);
-    doc.text('NÚMERO DE PEDIDO:', 20, 55);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`#${order.id.slice(-6).toUpperCase()}`, 20, 65);
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text('FECHA:', 150, 55);
-    doc.setFont('helvetica', 'bold');
-    doc.text(new Date(order.created_at).toLocaleDateString('es-AR'), 150, 65);
-    
-    // Customer Info Section
-    doc.setFillColor(245, 245, 245);
-    doc.rect(20, 75, 170, 45, 'F');
-    
-    doc.setTextColor(14, 79, 148);
-    doc.setFontSize(11);
-    doc.text('DATOS DEL CLIENTE', 25, 85);
-    
-    doc.setTextColor(80, 80, 80);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Nombre:', 25, 95);
-    doc.setFont('helvetica', 'normal');
-    doc.text(order.customer_name, 60, 95);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Teléfono:', 25, 102);
-    doc.setFont('helvetica', 'normal');
-    doc.text(order.customer_phone, 60, 102);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Dirección:', 25, 109);
-    doc.setFont('helvetica', 'normal');
-    doc.text(order.customer_address, 60, 109);
+    // Function to load image
+    const loadImage = (url: string): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = reject;
+      });
+    };
 
-    if (order.customer_notes) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('Notas:', 25, 116);
-      doc.setFont('helvetica', 'normal');
-      doc.text(order.customer_notes, 60, 116);
-    }
-    
-    // Table of products
-    const tableData = items.map((item: any) => [
-      item.name,
-      item.quantity.toString(),
-      `$${item.price.toLocaleString('es-AR')}`,
-      `$${(item.price * item.quantity).toLocaleString('es-AR')}`
-    ]);
-    
-    autoTable(doc, {
-      startY: 130,
-      head: [['Producto', 'Cant.', 'Precio Unit.', 'Subtotal']],
-      body: tableData,
-      headStyles: { fillColor: [14, 79, 148], textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
-      margin: { left: 20, right: 20 },
-      theme: 'striped'
-    });
-    
-    // Total
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setFillColor(240, 249, 255);
-    doc.rect(130, finalY, 60, 15, 'F');
-    doc.setTextColor(14, 79, 148);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`TOTAL: $${order.total.toLocaleString('es-AR')}`, 135, finalY + 10);
-    
-    // Shipping method
-    doc.setTextColor(150, 150, 150);
-    doc.setFontSize(9);
-    doc.text(`Método de Entrega: ${order.delivery_method === 'delivery' ? 'Envío a Domicilio' : 'Retiro en Local'}`, 20, finalY + 10);
-    
     try {
-      // Footer
-      doc.setFontSize(8);
-      doc.text('Gracias por elegir MAX Limpieza', 105, 285, { align: 'center' });
+      // Header Section
+      try {
+        const logoBase64 = await loadImage('/logo.png');
+        doc.addImage(logoBase64, 'PNG', 20, 15, 30, 30);
+      } catch (e) {
+        console.error('Logo could not be loaded', e);
+        doc.setTextColor(14, 79, 148);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('MAX LIMPIEZA', 20, 25);
+      }
+
+      // Title & Order Info (Right aligned)
+      doc.setTextColor(14, 79, 148);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('COMPROBANTE', 190, 25, { align: 'right' });
       
-      // Use Blob approach for better compatibility and explicit MIME type
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Orden: #${order.id.slice(-6).toUpperCase()}`, 190, 32, { align: 'right' });
+      doc.text(`Fecha: ${new Date(order.created_at).toLocaleDateString('es-AR')}`, 190, 37, { align: 'right' });
+
+      // Divider Line
+      doc.setDrawColor(230, 230, 230);
+      doc.setLineWidth(0.5);
+      doc.line(20, 50, 190, 50);
+
+      // Info Grid (Customer & Delivery)
+      // Customer Info Section
+      doc.setTextColor(14, 79, 148);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('INFORMACIÓN DEL CLIENTE', 20, 65);
+
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Nombre:', 20, 75);
+      doc.setFont('helvetica', 'normal');
+      doc.text(order.customer_name, 50, 75);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Teléfono:', 20, 82);
+      doc.setFont('helvetica', 'normal');
+      doc.text(order.customer_phone, 50, 82);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Dirección:', 20, 89);
+      doc.setFont('helvetica', 'normal');
+      doc.text(order.customer_address, 50, 89);
+
+      if (order.customer_notes) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Notas:', 20, 96);
+        doc.setFont('helvetica', 'normal');
+        doc.text(order.customer_notes, 50, 96);
+      }
+
+      // Delivery Status
+      doc.setTextColor(14, 79, 148);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('MÉTODO DE ENTREGA', 130, 65);
+      
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(order.delivery_method === 'delivery' ? 'Envío a Domicilio' : 'Retiro en Local', 130, 75);
+
+      // Table of products
+      const tableData = items.map((item: any) => [
+        item.name,
+        item.quantity.toString(),
+        `$${item.price.toLocaleString('es-AR')}`,
+        `$${(item.price * item.quantity).toLocaleString('es-AR')}`
+      ]);
+      
+      autoTable(doc, {
+        startY: 110,
+        head: [['Producto', 'Cant.', 'Precio Unit.', 'Subtotal']],
+        body: tableData,
+        headStyles: { 
+          fillColor: [14, 79, 148], 
+          textColor: 255, 
+          fontSize: 10,
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        columnStyles: {
+          1: { halign: 'center' },
+          2: { halign: 'right' },
+          3: { halign: 'right' }
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 20, right: 20 },
+        theme: 'striped'
+      });
+      
+      // Total Calculation Area
+      const finalY = (doc as any).lastAutoTable.finalY + 15;
+      
+      doc.setDrawColor(14, 79, 148);
+      doc.setLineWidth(0.5);
+      doc.line(130, finalY - 5, 190, finalY - 5);
+      
+      doc.setTextColor(14, 79, 148);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`TOTAL FINAL:`, 130, finalY + 5);
+      doc.text(`$${order.total.toLocaleString('es-AR')}`, 190, finalY + 5, { align: 'right' });
+      
+      // Footer
+      doc.setFontSize(9);
+      doc.setTextColor(150, 150, 150);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Gracias por su compra en MAX Limpieza. Su confianza es nuestro motor.', 105, 280, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('www.maxlimpieza.com.ar', 105, 285, { align: 'center' });
+      
+      // Download
       const pdfBlob = doc.output('blob');
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
