@@ -7,6 +7,7 @@ interface CartItem {
   price: number;
   quantity: number;
   image: string | null;
+  is_wholesale?: number;
 }
 
 interface StoreState {
@@ -58,7 +59,8 @@ export const useStore = create<StoreState>()(
               name: product.name, 
               price: product.price, 
               quantity, 
-              image: product.image 
+              image: product.image,
+              is_wholesale: product.is_wholesale 
             }] 
           });
         }

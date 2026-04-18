@@ -133,7 +133,7 @@ export default function Header() {
                 src="/logo.png"
                 alt="MAX Limpieza Logo"
                 fill
-                className="object-contain group-hover:scale-105 transition-transform duration-300"
+                className="object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
               />
             </div>
             <div className="hidden sm:block">
@@ -204,6 +204,9 @@ export default function Header() {
             </Link>
             <Link href="/calculadora" className="text-gray-700 hover:text-sky-600 font-medium transition-colors">
               Calculadora
+            </Link>
+            <Link href="/mayorista" className="px-4 py-2 bg-sky-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-sky-700 transition-all shadow-lg shadow-sky-600/20 active:scale-95">
+              Mayorista
             </Link>
           </nav>
 
@@ -312,6 +315,7 @@ export default function Header() {
             </form>
 
             <nav className="flex flex-col gap-1 overflow-y-auto flex-1">
+              <MobileNavLink href="/mayorista" label="Mayorista" icon={<TrendingUp className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
               <MobileNavLink href="/tienda" label="Productos" icon={<Package className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
               <MobileNavLink href="/combos" label="Combos" icon={<ShoppingCart className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
               <MobileNavLink href="/consejos" label="Consejos" icon={<ChevronDown className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />

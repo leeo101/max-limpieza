@@ -31,6 +31,7 @@ interface Product {
   active: number;
   featured: number;
   bestseller: number;
+  is_wholesale: number;
   image: string | null;
   category_name?: string;
 }
@@ -38,6 +39,49 @@ interface Product {
 interface Category {
   id: string;
   name: string;
+}
+
+// Helper to compress and resize images before upload
+async function resizeImage(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1080;
+        const MAX_HEIGHT = 1080;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Resize failed'));
+        }, 'image/jpeg', 0.85);
+      };
+    };
+  });
 }
 
 export default function AdminProductsPage() {
@@ -60,6 +104,7 @@ export default function AdminProductsPage() {
     active: 1,
     featured: 0,
     bestseller: 0,
+    is_wholesale: 0,
   });
 
   useEffect(() => {
@@ -108,6 +153,7 @@ export default function AdminProductsPage() {
         active: product.active,
         featured: product.featured,
         bestseller: product.bestseller,
+        is_wholesale: product.is_wholesale || 0,
       });
     } else {
       setEditingProduct(null);
@@ -122,6 +168,7 @@ export default function AdminProductsPage() {
         active: 1,
         featured: 0,
         bestseller: 0,
+        is_wholesale: 0,
       });
     }
     setShowModal(true);
@@ -138,8 +185,12 @@ export default function AdminProductsPage() {
 
     setUploadingImage(true);
     try {
+      // Process image before upload
+      const resizedBlob = await resizeImage(file);
+      const processedFile = new File([resizedBlob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' });
+
       const form = new FormData();
-      form.append('file', file);
+      form.append('file', processedFile);
       const token = localStorage.getItem('adminToken');
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -150,10 +201,14 @@ export default function AdminProductsPage() {
       if (result.success) {
         setFormData(prev => ({ ...prev, image: result.data.url }));
         setImagePreview(result.data.url);
-        toast.success('Imagen subida');
+        toast.success('Imagen optimizada y subida');
+      } else {
+        toast.error(result.error || 'Error al subir imagen');
+        console.error('Upload error:', result);
       }
-    } catch {
-      toast.error('Error al subir imagen');
+    } catch (error) {
+      console.error('Processing error:', error);
+      toast.error('Error al procesar la imagen');
     } finally {
       setUploadingImage(false);
     }
@@ -281,9 +336,9 @@ export default function AdminProductsPage() {
                   <tr key={p.id} className="group hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 relative">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-gray-100 relative">
                           {p.image ? (
-                            <Image src={p.image} alt={p.name} fill className="object-cover" />
+                            <Image src={p.image} alt={p.name} fill className="object-contain mix-blend-multiply" />
                           ) : (
                             <Package className="w-full h-full p-3 text-gray-200" />
                           )}
@@ -304,6 +359,7 @@ export default function AdminProductsPage() {
                       <div className="flex gap-1">
                         {p.featured === 1 && <Star size={14} className="text-amber-400 fill-amber-400" />}
                         {p.bestseller === 1 && <TrendingUp size={14} className="text-sky-500" />}
+                        {p.is_wholesale === 1 && <div className="px-1.5 py-0.5 bg-sky-500 text-white text-[8px] font-black rounded uppercase">Mayorista</div>}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -328,9 +384,9 @@ export default function AdminProductsPage() {
             {filteredProducts.map((p) => (
               <div key={p.id} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
                 <div className="flex gap-4 mb-4">
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 relative">
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white border border-gray-100 relative">
                     {p.image ? (
-                      <Image src={p.image} alt={p.name} fill className="object-cover" />
+                      <Image src={p.image} alt={p.name} fill className="object-contain mix-blend-multiply" />
                     ) : (
                       <Package className="w-full h-full p-5 text-gray-200" />
                     )}
@@ -381,10 +437,10 @@ export default function AdminProductsPage() {
           <div className="flex flex-col sm:flex-row gap-6">
             {/* Image Section */}
             <div className="w-full sm:w-48 space-y-4">
-              <div className="aspect-square rounded-3xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 relative flex items-center justify-center group">
+              <div className="aspect-square rounded-3xl overflow-hidden bg-white border-2 border-dashed border-gray-200 relative flex items-center justify-center group">
                 {imagePreview ? (
                   <>
-                    <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                    <Image src={imagePreview} alt="Preview" fill className="object-contain mix-blend-multiply" />
                     <button 
                       type="button"
                       onClick={() => { setImagePreview(null); setFormData(prev => ({ ...prev, image: '' })); }}
@@ -471,6 +527,7 @@ export default function AdminProductsPage() {
                 <OptionToggle active={formData.active === 1} label="Activo" onClick={() => setFormData({...formData, active: formData.active === 1 ? 0 : 1})} />
                 <OptionToggle active={formData.featured === 1} label="Destacado" onClick={() => setFormData({...formData, featured: formData.featured === 1 ? 0 : 1})} />
                 <OptionToggle active={formData.bestseller === 1} label="Pro" onClick={() => setFormData({...formData, bestseller: formData.bestseller === 1 ? 0 : 1})} />
+                <OptionToggle active={formData.is_wholesale === 1} label="Mayorista" onClick={() => setFormData({...formData, is_wholesale: formData.is_wholesale === 1 ? 0 : 1})} />
              </div>
           </div>
 

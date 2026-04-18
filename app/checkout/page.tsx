@@ -81,8 +81,19 @@ export default function CheckoutPage() {
   };
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const freeShippingThreshold = 50000;
-  const isFreeShipping = total >= freeShippingThreshold;
+  const wholesaleTotal = cart
+    .filter(item => item.is_wholesale === 1)
+    .reduce((sum, item) => sum + item.price * item.quantity, 0);
+  
+  const hasWholesale = wholesaleTotal > 0;
+  const wholesaleMin = 200000;
+  const retailFreeShippingThreshold = 50000;
+
+  const isFreeShipping = hasWholesale 
+    ? wholesaleTotal >= wholesaleMin 
+    : total >= retailFreeShippingThreshold;
+
+  const wholesaleConditionMet = !hasWholesale || wholesaleTotal >= wholesaleMin;
 
   const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 3));
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
@@ -344,10 +355,14 @@ export default function CheckoutPage() {
                           />
                         </div>
 
-                        {formData.delivery_method === 'delivery' && !isFreeShipping && (
-                          <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800 text-xs font-bold flex gap-3">
+                        {formData.delivery_method === 'delivery' && (
+                          <div className={`p-4 border rounded-2xl text-xs font-bold flex gap-3 ${isFreeShipping ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-amber-50 border-amber-100 text-amber-800'}`}>
                             <Truck size={20} className="flex-shrink-0" />
-                            <p>El envío se abona al recibir o retirar en sucursal según las tarifas de {formData.shipping_company}.</p>
+                            {isFreeShipping ? (
+                              <p>¡Tu pedido califica para **Envío Gratis**! Despacharemos por {formData.shipping_company} sin costo adicional.</p>
+                            ) : (
+                              <p>El envío se abona al recibir o retirar en sucursal según las tarifas de {formData.shipping_company}.</p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -431,9 +446,17 @@ export default function CheckoutPage() {
 
                 <div className="pt-6 border-t border-gray-100 space-y-2.5">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
-                    <span>Subtotal</span>
+                    <span>Subtotal {hasWholesale ? 'General' : ''}</span>
                     <span>${total.toLocaleString('es-AR')}</span>
                   </div>
+                  {hasWholesale && (
+                    <div className="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
+                      <span>Subtotal Mayorista</span>
+                      <span className={wholesaleTotal >= wholesaleMin ? 'text-emerald-600' : 'text-amber-500'}>
+                        ${wholesaleTotal.toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Envío</span>
                     <span className={`text-[10px] font-black uppercase tracking-tighter ${isFreeShipping ? 'text-emerald-500' : 'text-amber-500'}`}>
@@ -449,19 +472,21 @@ export default function CheckoutPage() {
                 {isFreeShipping ? (
                   <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
                     <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 text-center leading-relaxed">
-                      ¡Felicitaciones! Superaste los $50.000 y el despacho es gratuito.
+                      {hasWholesale 
+                        ? '¡Pedido Mayorista Confirmado! Tenés despacho bonificado.' 
+                        : '¡Felicitaciones! Superaste los $50.000 y el despacho es gratuito.'}
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
                       <span>Para envío gratis</span>
-                      <span>${(freeShippingThreshold - total).toLocaleString('es-AR')}</span>
+                      <span>${((hasWholesale ? wholesaleMin : retailFreeShippingThreshold) - (hasWholesale ? wholesaleTotal : total)).toLocaleString('es-AR')}</span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-sky-500 transition-all duration-1000"
-                        style={{ width: `${(total / freeShippingThreshold) * 100}%` }}
+                        style={{ width: `${((hasWholesale ? wholesaleTotal : total) / (hasWholesale ? wholesaleMin : retailFreeShippingThreshold)) * 100}%` }}
                       />
                     </div>
                   </div>

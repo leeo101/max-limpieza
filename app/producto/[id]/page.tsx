@@ -157,7 +157,7 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Gallery Section */}
             <div className="space-y-4">
-              <div className="relative aspect-square bg-gray-50 rounded-[40px] overflow-hidden group">
+              <div className="relative aspect-square bg-white rounded-[40px] overflow-hidden group">
                 {product.image ? (
                   <motion.div
                     key={activeImage}
@@ -169,7 +169,7 @@ export default function ProductDetailPage() {
                       src={product.image}
                       alt={product.name}
                       fill
-                      className="object-contain p-8 md:p-12 hover:scale-105 transition-transform duration-700"
+                      className="object-contain p-8 md:p-12 mix-blend-multiply hover:scale-105 transition-transform duration-700"
                       priority
                     />
                   </motion.div>
@@ -190,9 +190,9 @@ export default function ProductDetailPage() {
                   <button
                     key={idx}
                     onClick={() => setActiveImage(idx)}
-                    className={`relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 bg-gray-50 ${activeImage === idx ? 'border-sky-500 ring-4 ring-sky-500/10' : 'border-gray-100 opacity-60 hover:opacity-100'}`}
+                    className={`relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 bg-white ${activeImage === idx ? 'border-sky-500 ring-4 ring-sky-500/10' : 'border-gray-100 opacity-60 hover:opacity-100'}`}
                   >
-                    <Image src={img!} alt="Vista" fill className="object-contain p-3" />
+                    <Image src={img!} alt="Vista" fill className="object-contain p-3 mix-blend-multiply" />
                   </button>
                 ))}
               </div>

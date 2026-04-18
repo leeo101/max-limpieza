@@ -34,14 +34,14 @@ export default function ProductCard({ id, name, description, price, image, categ
     <div className="group bg-white rounded-3xl overflow-hidden border border-gray-100 hover:border-sky-100 hover:shadow-2xl hover:shadow-sky-900/5 transition-all duration-500">
       <div className="relative">
         <Link href={`/producto/${id}`}>
-          <div className="relative aspect-[4/3] bg-gray-50 flex items-center justify-center overflow-hidden">
+          <div className="relative aspect-[4/3] bg-white flex items-center justify-center overflow-hidden">
             {image ? (
               <Image
                 src={image}
                 alt={name}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-contain p-6 group-hover:scale-110 transition-transform duration-700"
+                className="object-contain p-6 mix-blend-multiply group-hover:scale-110 transition-transform duration-700"
               />
             ) : (
               <Package className="w-16 h-16 text-gray-200" />

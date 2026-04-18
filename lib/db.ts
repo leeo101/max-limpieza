@@ -76,6 +76,7 @@ export async function initializeDatabase() {
       active INTEGER DEFAULT 1,
       featured INTEGER DEFAULT 0,
       bestseller INTEGER DEFAULT 0,
+      is_wholesale INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (category_id) REFERENCES categories(id)
@@ -200,6 +201,20 @@ export async function initializeDatabase() {
     `;
   }
 
+  // New wholesale categories
+  const wholesaleCategories = [
+    { id: 'cat-w-001', name: 'Pastas Mayoristas', slug: 'pastas-mayoristas', description: 'Pastas base para fabricar jabón, detergente y desengrasante' },
+    { id: 'cat-w-002', name: 'Concentrados Mayoristas', slug: 'concentrados-mayoristas', description: 'Concentrados premium para fragancias y productos de limpieza' },
+  ];
+
+  for (const cat of wholesaleCategories) {
+    await sql`
+      INSERT INTO categories (id, name, slug, description) 
+      VALUES (${cat.id}, ${cat.name}, ${cat.slug}, ${cat.description})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
+
   // Insert sample products
   const sampleProducts = [
     { id: 'prod-001', name: 'Detergente Líquido Premium 1L', description: 'Detergente líquido concentrado biodegradable, ideal para todo tipo de superficies. Rinde hasta 50 limpiezas.', price: 850, stock: 100, category_id: 'cat-001', featured: 1, bestseller: 1 },
@@ -210,12 +225,30 @@ export async function initializeDatabase() {
     { id: 'prod-006', name: 'Desinfectante Multiusos 1L', description: 'Desinfectante antibacterial que elimina el 99.9% de gérmenes y bacterias.', price: 900, stock: 90, category_id: 'cat-005', featured: 1, bestseller: 1 },
     { id: 'prod-007', name: 'Kit de Limpieza Básico', description: 'Incluye: escoba, recogedor, trapo de piso y esponja multiusos.', price: 2500, stock: 30, category_id: 'cat-006', featured: 1, bestseller: 0 },
     { id: 'prod-008', name: 'Limpiavidrios 500ml', description: 'Limpiavidrios profesional sin rayas. Secado rápido con brillo extra.', price: 680, stock: 70, category_id: 'cat-001', featured: 0, bestseller: 0 },
+    { id: 'prod-cloro', name: 'Cloro (Hipoclorito de Sodio)', description: 'Solución de hipoclorito de sodio al 5.5% para desinfección total de superficies y agua. Elimina virus, bacterias y hongos.', price: 500, stock: 150, category_id: 'cat-005', image: '/uploads/cloro.png', featured: 1, bestseller: 1 },
   ];
 
   for (const prod of sampleProducts) {
     await sql`
-      INSERT INTO products (id, name, description, price, stock, category_id, featured, bestseller) 
-      VALUES (${prod.id}, ${prod.name}, ${prod.description}, ${prod.price}, ${prod.stock}, ${prod.category_id}, ${prod.featured}, ${prod.bestseller})
+      INSERT INTO products (id, name, description, price, stock, category_id, image, featured, bestseller, is_wholesale) 
+      VALUES (${prod.id}, ${prod.name}, ${prod.description}, ${prod.price}, ${prod.stock}, ${prod.category_id}, ${prod.image || null}, ${prod.featured}, ${prod.bestseller}, 0)
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
+
+  // Wholesale sample products
+  const wholesaleProducts = [
+    { id: 'prod-w-001', name: 'Pasta Jabón Liquido Tipo Ariel (X 200kg)', description: 'Pasta base concentrada para fabricar jabón líquido de alta calidad. Rinde para 1000L finales.', price: 185000, stock: 20, category_id: 'cat-w-001' },
+    { id: 'prod-w-002', name: 'Pasta Detergente Ultra (X 50kg)', description: 'Pasta concentrada con alto poder desengrasante.', price: 95000, stock: 15, category_id: 'cat-w-001' },
+    { id: 'prod-w-003', name: 'Concentrado Suavizante (X 20L)', description: 'Concentrado para fabricar suavizante de ropa premium.', price: 45000, stock: 30, category_id: 'cat-w-002' },
+    { id: 'prod-w-004', name: 'Concentrado Desengrasante Motor (X 10L)', description: 'Fórmula ultra concentrada para limpieza pesada.', price: 32000, stock: 25, category_id: 'cat-w-002' },
+    { id: 'prod-w-005', name: 'Esencia pura Perfumina - Coco/Vainilla (1L)', description: 'Esencia pura para diluir y fabricar perfuminas.', price: 12000, stock: 100, category_id: 'cat-w-002' },
+  ];
+
+  for (const prod of wholesaleProducts) {
+    await sql`
+      INSERT INTO products (id, name, description, price, stock, category_id, featured, bestseller, is_wholesale) 
+      VALUES (${prod.id}, ${prod.name}, ${prod.description}, ${prod.price}, ${prod.stock}, ${prod.category_id}, 0, 0, 1)
       ON CONFLICT (id) DO NOTHING;
     `;
   }
@@ -250,8 +283,9 @@ export async function initializeDatabase() {
   // Check and add customer_dni if it doesn't exist
   try {
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_dni TEXT`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_wholesale INTEGER DEFAULT 0`;
   } catch (e) {
-    console.log('Column customer_dni might already exist');
+    console.log('Migration check complete');
   }
 }
 

@@ -151,9 +151,9 @@ export default function HomePage() {
                   href={`/tienda?category=${category.slug}`}
                   className="group flex flex-col items-center text-center"
                 >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 bg-gray-50 rounded-[32px] border border-gray-100 flex items-center justify-center overflow-hidden group-hover:bg-white group-hover:shadow-2xl group-hover:shadow-sky-500/10 group-hover:border-sky-100 transition-all duration-500 transform group-hover:-translate-y-2">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 bg-white rounded-[32px] border border-gray-100 flex items-center justify-center overflow-hidden group-hover:bg-white group-hover:shadow-2xl group-hover:shadow-sky-500/10 group-hover:border-sky-100 transition-all duration-500 transform group-hover:-translate-y-2">
                     {typeof content === 'string' ? (
-                      <img src={content} alt={category.name} className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500" />
+                      <img src={content} alt={category.name} className="w-full h-full object-contain p-4 mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
                     ) : (
                       <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center">
                         {/* @ts-expect-error - Dynamic content component type mismatch */}

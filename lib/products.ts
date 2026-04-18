@@ -1,9 +1,9 @@
 import sql from './db';
 import { v4 as uuidv4 } from 'uuid';
 
-export interface Product { id: string; name: string; description: string; price: number; stock: number; category_id: string | null; image: string | null; images: string | null; sku: string | null; active: number; featured: number; bestseller: number; created_at: string; updated_at: string; category_name?: string; averageRating?: number; reviewCount?: number; }
+export interface Product { id: string; name: string; description: string; price: number; stock: number; category_id: string | null; image: string | null; images: string | null; sku: string | null; active: number; featured: number; bestseller: number; is_wholesale: number; created_at: string; updated_at: string; category_name?: string; averageRating?: number; reviewCount?: number; }
 export interface Category { id: string; name: string; slug: string; description: string | null; image: string | null; active: number; created_at?: string; }
-export interface CartItem { id: string; name: string; price: number; quantity: number; image: string | null; }
+export interface CartItem { id: string; name: string; price: number; quantity: number; image: string | null; is_wholesale?: number; }
 export interface Order { id: string; customer_name: string; customer_phone: string; customer_email: string | null; customer_dni: string | null; customer_address: string; customer_notes: string | null; delivery_method: string; total: number; status: string; items: string; user_id: string | null; created_at: string; updated_at: string; }
 
 export function normalizeProduct(p: Record<string, unknown>): Product {
@@ -21,6 +21,7 @@ export function normalizeProduct(p: Record<string, unknown>): Product {
     active: Number(p.active === undefined ? (p.activo === undefined ? 1 : p.activo) : p.active),
     featured: Number(p.featured || p.destacado || 0),
     bestseller: Number(p.bestseller || p.mas_vendido || 0),
+    is_wholesale: Number(p.is_wholesale || p.es_mayorista || 0),
     created_at: String(p.created_at || p.fecha_creacion || ''),
     updated_at: String(p.updated_at || p.fecha_actualizacion || ''),
     category_name: (p.category_name || p.nombre_categoria || undefined) as string | undefined,
@@ -98,8 +99,8 @@ export async function getProductsByCategory(categoryId: string): Promise<Product
 export async function createProduct(data: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
   const id = uuidv4();
   await sql`
-    INSERT INTO products (id, name, description, price, stock, category_id, image, images, sku, active, featured, bestseller)
-    VALUES (${id}, ${data.name}, ${data.description}, ${data.price}, ${data.stock}, ${data.category_id}, ${data.image}, ${data.images}, ${data.sku}, ${data.active}, ${data.featured}, ${data.bestseller})
+    INSERT INTO products (id, name, description, price, stock, category_id, image, images, sku, active, featured, bestseller, is_wholesale)
+    VALUES (${id}, ${data.name}, ${data.description}, ${data.price}, ${data.stock}, ${data.category_id}, ${data.image}, ${data.images}, ${data.sku}, ${data.active}, ${data.featured}, ${data.bestseller}, ${data.is_wholesale || 0})
   `;
   return id;
 }

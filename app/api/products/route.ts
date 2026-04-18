@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       active: body.active !== undefined ? body.active : 1,
       featured: body.featured || 0,
       bestseller: body.bestseller || 0,
+      is_wholesale: body.is_wholesale || 0,
     });
 
     return NextResponse.json({ success: true, data: { id } });
