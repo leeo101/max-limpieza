@@ -69,6 +69,13 @@ export default function AdminOrdersPage() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     const token = localStorage.getItem('adminToken');
+    const order = orders.find(o => o.id === orderId);
+    
+    let trackingNumber = '';
+    if (newStatus === 'delivered') {
+      trackingNumber = window.prompt('Ingresá el Número de Seguimiento (Opcional):', '') || '';
+    }
+
     try {
       const response = await fetch('/api/orders', {
         method: 'PATCH',
@@ -81,6 +88,13 @@ export default function AdminOrdersPage() {
       const result = await response.json();
       if (result.success) {
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        
+        // WhatsApp Notification Logic
+        if (newStatus === 'delivered' && order) {
+          const message = `¡Hola ${order.customer_name}! Te aviso que ya despachamos tu pedido #${order.id.slice(-6).toUpperCase()}.${trackingNumber ? ` El número de seguimiento es: ${trackingNumber}.` : ''} A continuación te adjunto la foto del comprobante. ¡Muchas gracias!`;
+          const encodedMsg = encodeURIComponent(message);
+          window.open(`https://wa.me/${order.customer_phone.replace(/\D/g, '')}?text=${encodedMsg}`, '_blank');
+        }
       } else {
         alert(result.error || 'Error al actualizar el estado');
       }
