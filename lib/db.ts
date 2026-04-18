@@ -83,6 +83,16 @@ export async function initializeDatabase() {
     );
   `;
 
+  // Migrations for existing tables
+  try {
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS sku TEXT UNIQUE`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_wholesale INTEGER DEFAULT 0`;
+    console.log('✅ Base de datos sincronizada correctamente');
+  } catch (error) {
+    console.error('⚠️ Error sincronizando columnas (puede que ya existan):', error);
+  }
+
   await sql`
     CREATE TABLE IF NOT EXISTS orders (
       id TEXT PRIMARY KEY,

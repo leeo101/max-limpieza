@@ -221,13 +221,20 @@ export default function AdminProductsPage() {
       const url = editingProduct ? `/api/products?id=${editingProduct.id}` : '/api/products';
       const method = editingProduct ? 'PUT' : 'POST';
 
+      // Clean numbers before sending
+      const submissionData = {
+        ...formData,
+        price: formData.price.toString().replace(',', '.'),
+        stock: parseInt(formData.stock.toString()) || 0
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       });
 
       const result = await response.json();
@@ -235,9 +242,12 @@ export default function AdminProductsPage() {
         toast.success(editingProduct ? 'Producto actualizado' : 'Producto creado');
         setShowModal(false);
         fetchData();
+      } else {
+        toast.error(result.error || 'Error al guardar el producto');
       }
-    } catch {
-      toast.error('Error al guardar');
+    } catch (err: any) {
+      console.error('Submit error:', err);
+      toast.error('Error de red al intentar guardar');
     }
   };
 

@@ -58,8 +58,12 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, data: { id } });
-  } catch {
-    return NextResponse.json({ success: false, error: 'Error creating product' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Create product error:', err);
+    return NextResponse.json({ 
+      success: false, 
+      error: err.message || 'Error al crear el producto en la base de datos' 
+    }, { status: 500 });
   }
 }
 
@@ -99,8 +103,12 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ success: false, error: 'Error updating product' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Update product error:', err);
+    return NextResponse.json({ 
+      success: false, 
+      error: err.message || 'Error al actualizar el producto' 
+    }, { status: 500 });
   }
 }
 
