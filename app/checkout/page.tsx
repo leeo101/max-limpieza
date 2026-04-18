@@ -72,6 +72,7 @@ export default function CheckoutPage() {
         customer_name: userData.name || '',
         customer_phone: userData.phone || '',
         customer_email: userData.email || '',
+        customer_dni: '',
         customer_address: userData.address || '',
         customer_city: userData.city || '',
         customer_province: userData.province || 'San Juan',

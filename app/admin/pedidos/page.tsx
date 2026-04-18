@@ -22,6 +22,7 @@ interface Order {
   customer_name: string;
   customer_phone: string;
   customer_email: string | null;
+  customer_dni: string | null;
   customer_address: string;
   customer_notes: string | null;
   delivery_method: string;
@@ -232,7 +233,6 @@ export default function AdminOrdersPage() {
       ]);
       
       autoTable(doc, {
-        startY: 110,
         head: [['Producto', 'Cant.', 'Precio Unit.', 'Subtotal']],
         body: tableData,
         headStyles: { 
