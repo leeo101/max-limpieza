@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   User,
@@ -13,6 +14,13 @@ import {
   X,
   Package,
 } from 'lucide-react';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string | null;
+}
 
 interface User {
   id: string;
@@ -45,6 +53,8 @@ export default function Header() {
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout;
+
     if (searchQuery.length > 1) {
       const search = async () => {
         try {
@@ -61,12 +71,18 @@ export default function Header() {
           console.error(e);
         }
       };
-      const debounceTimer = setTimeout(search, 300);
-      return () => clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(search, 300);
     } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
+      // Defer state updates to avoid synchronous setState warning in effect
+      setTimeout(() => {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }, 0);
     }
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
   }, [searchQuery]);
 
   useEffect(() => {

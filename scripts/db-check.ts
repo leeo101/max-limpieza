@@ -11,8 +11,8 @@ async function checkSchema() {
     } else {
       console.log('No users found.');
     }
-  } catch (err: any) {
-    console.error('Error checking users:', err.message);
+  } catch (err: unknown) {
+    console.error('Error checking users:', err instanceof Error ? err.message : 'Unknown error');
   }
 
   console.log('\n--- Checking ORDERS table ---');
@@ -23,8 +23,8 @@ async function checkSchema() {
     } else {
       console.log('No orders found.');
     }
-  } catch (err: any) {
-    console.error('Error checking orders:', err.message);
+  } catch (err: unknown) {
+    console.error('Error checking orders:', err instanceof Error ? err.message : 'Unknown error');
   }
 
   process.exit(0);

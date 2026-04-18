@@ -13,7 +13,8 @@ import {
   X, 
   SlidersHorizontal, 
   ShoppingBag,
-  ArrowRight
+  ArrowRight,
+  Truck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

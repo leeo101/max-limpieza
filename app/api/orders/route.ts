@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createOrder, getAllOrders, getOrderById, updateOrderStatus, deleteOrder, getStats, getRecentOrders, getLowStockProducts, getDailySalesStats } from '@/lib/products';
 import { sendOrderConfirmationToCustomer, sendOrderNotification } from '@/lib/email';
 import { verifyToken } from '@/lib/auth';
+import { orderLimiter } from '@/lib/rateLimit';
 
 export async function GET(request: Request) {
   try {
@@ -15,6 +16,19 @@ export async function GET(request: Request) {
       if (!order) {
         return NextResponse.json({ success: false, error: 'Pedido no encontrado' }, { status: 404 });
       }
+
+      // Security Hardening: Only allow public access if created in the last 24 hours
+      const orderDate = new Date(order.created_at);
+      const hoursSinceCreation = (Date.now() - orderDate.getTime()) / (1000 * 60 * 60);
+      
+      // Check if user is admin (to allow viewing old orders in detail from admin panel)
+      const authHeader = request.headers.get('authorization');
+      const isAdmin = authHeader && authHeader.startsWith('Bearer ') && verifyToken(authHeader.split(' ')[1])?.role === 'admin';
+
+      if (!isAdmin && hoursSinceCreation > 24) {
+        return NextResponse.json({ success: false, error: 'Acceso denegado. Este pedido ya no es accesible públicamente.' }, { status: 403 });
+      }
+
       return NextResponse.json({ success: true, data: order });
     }
 
@@ -54,14 +68,31 @@ export async function GET(request: Request) {
 
     const orders = await getAllOrders();
     return NextResponse.json({ success: true, data: orders });
-  } catch (error) {
-    console.error('API Error:', error);
+  } catch (_error) {
+    console.error('API Error:', _error);
     return NextResponse.json({ success: false, error: 'Error fetching orders' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
+    // Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
+    const limitResult = orderLimiter.check(5, ip); // 5 orders per hour per IP
+    
+    if (limitResult.isLimitReached) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Demasiados intentos. Por favor espera una hora.' 
+      }, { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': limitResult.limit.toString(),
+          'X-RateLimit-Current': limitResult.current.toString(),
+        }
+      });
+    }
+
     const body = await request.json();
     
     if (!body.customer_name || !body.customer_phone || !body.customer_address || !body.items || !body.total) {
@@ -121,8 +152,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, id: orderId });
-  } catch (error) {
-    console.error('POST Order Error:', error);
+  } catch (_error) {
+    console.error('POST Order Error:', _error);
     return NextResponse.json({ success: false, error: 'Error creating order' }, { status: 500 });
   }
 }
@@ -156,8 +187,8 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ success: true, id });
-  } catch (error) {
-    console.error('PATCH Order Error:', error);
+  } catch (_error) {
+    console.error('PATCH Order Error:', _error);
     return NextResponse.json({ success: false, error: 'Error updating order' }, { status: 500 });
   }
 }
@@ -191,8 +222,8 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true, message: 'Order deleted successfully' });
-  } catch (error) {
-    console.error('DELETE Order Error:', error);
+  } catch (_error) {
+    console.error('DELETE Order Error:', _error);
     return NextResponse.json({ success: false, error: 'Error deleting order' }, { status: 500 });
   }
 }

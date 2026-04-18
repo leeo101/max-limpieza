@@ -1,3 +1,9 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { Search, LayoutDashboard, Package, Tags, ShoppingCart, LogOut, Globe, Bell } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
@@ -15,7 +21,7 @@ export default function AdminLayout({
   useEffect(() => {
     // Skip token check on login page
     if (pathname === '/admin/login') {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 0);
       return;
     }
 

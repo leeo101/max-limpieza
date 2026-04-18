@@ -7,7 +7,7 @@ import Footer from '@/components/Footer';
 import Hero from '@/components/Hero';
 import ProductCard from '@/components/ProductCard';
 import { ProductSkeleton } from '@/components/Skeleton';
-import { Folder, Check, Zap, DollarSign, MessageCircle, Droplets, SprayCan, FlaskConical, ShieldCheck, Car, Shirt, Star, type LucideIcon } from 'lucide-react';
+import { Folder, Check, Zap, DollarSign, MessageCircle, Droplets, SprayCan, FlaskConical, ShieldCheck, Car, Shirt, Star, ChevronRight, type LucideIcon } from 'lucide-react';
 
 // Icon/Image mapping for categories
 const categoryContent: Record<string, LucideIcon | string> = {
@@ -156,7 +156,7 @@ export default function HomePage() {
                       <img src={content} alt={category.name} className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500" />
                     ) : (
                       <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center">
-                        {/* @ts-ignore */}
+                        {/* @ts-expect-error - Dynamic content component type mismatch */}
                         <content className="w-6 h-6 text-sky-500" />
                       </div>
                     )}

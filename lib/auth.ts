@@ -4,7 +4,15 @@ import { v4 as uuidv4 } from 'uuid';
 import db from './db';
 import { sendWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from './email';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'max-limpieza-secret-key-2024-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is missing. Authentication will fail.');
+}
+
+if (JWT_SECRET.length < 32 && process.env.NODE_ENV === 'production') {
+  console.warn('SECURITY WARNING: JWT_SECRET is too short (< 32 chars). Consider using a stronger key.');
+}
 
 export interface User {
   id: string;
@@ -149,7 +157,8 @@ export async function updateUserProfile(userId: string, data: {
   postal_code?: string;
 }): Promise<boolean> {
   try {
-    const keys = Object.keys(data).filter(k => (data as any)[k] !== undefined);
+    const dataObj = data as Record<string, unknown>;
+    const keys = Object.keys(data).filter(k => dataObj[k] !== undefined);
     if (keys.length === 0) return false;
 
     // Build dynamic update
@@ -170,10 +179,16 @@ export async function updateUserProfile(userId: string, data: {
 }
 
 export function verifyToken(token: string): { id: string; email: string; role: string } | null {
+  if (!token || !JWT_SECRET) return null;
   try {
     return jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
-  } catch {
-    return null; // or null
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      console.warn('[Auth] Token expired');
+    } else {
+      console.error('[Auth] Token verification failed:', error instanceof Error ? error.message : 'Unknown error');
+    }
+    return null;
   }
 }
 

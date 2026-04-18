@@ -13,7 +13,8 @@ import {
   Package, 
   Truck, 
   ArrowLeft,
-  CreditCard
+  CreditCard,
+  MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

@@ -216,7 +216,7 @@ export default function AdminOrdersPage() {
       doc.setFont('helvetica', 'bold');
       doc.text(order.delivery_method === 'delivery' ? 'Envío a Domicilio' : 'Retiro en Local', 130, 75);
 
-      const tableData = items.map((item: any) => [
+      const tableData = items.map((item: OrderItem) => [
         item.name,
         item.quantity.toString(),
         `$${item.price.toLocaleString('es-AR')}`,
@@ -244,6 +244,7 @@ export default function AdminOrdersPage() {
         theme: 'striped'
       });
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const finalY = (doc as any).lastAutoTable.finalY + 15;
       
       doc.setDrawColor(14, 79, 148);
@@ -281,7 +282,8 @@ export default function AdminOrdersPage() {
   const exportOrdersToCSV = () => {
     const headers = ['ID', 'Fecha', 'Cliente', 'WhatsApp', 'DNI', 'Metodo', 'Total', 'Estado', 'Items'];
     const rows = filteredOrders.map(o => {
-      const items = JSON.parse(o.items).map((i: any) => `${i.quantity}x ${i.name}`).join('; ');
+      const itemsArr = JSON.parse(o.items) as OrderItem[];
+      const itemsStr = itemsArr.map((i: OrderItem) => `${i.quantity}x ${i.name}`).join('; ');
       return [
         o.id.slice(-6).toUpperCase(),
         new Date(o.created_at).toLocaleDateString('es-AR'),

@@ -24,6 +24,20 @@ interface SalesChartProps {
   loading?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-4 shadow-2xl rounded-2xl border border-gray-100 flex flex-col gap-1">
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
+        <p className="text-sm font-black text-sky-600">Ventas: ${payload[0].value.toLocaleString('es-AR')}</p>
+        <p className="text-sm font-black text-gray-700">Pedidos: {payload[1].value}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function SalesChart({ data, loading }: SalesChartProps) {
   if (loading) {
     return (
@@ -41,19 +55,6 @@ export default function SalesChart({ data, loading }: SalesChartProps) {
       displayDate: d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
     };
   });
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-4 shadow-2xl rounded-2xl border border-gray-100 flex flex-col gap-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
-          <p className="text-sm font-black text-sky-600">Ventas: ${payload[0].value.toLocaleString('es-AR')}</p>
-          <p className="text-sm font-black text-gray-700">Pedidos: {payload[1].value}</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="w-full space-y-8">

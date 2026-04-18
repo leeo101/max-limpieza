@@ -6,8 +6,8 @@ export interface Category { id: string; name: string; slug: string; description:
 export interface CartItem { id: string; name: string; price: number; quantity: number; image: string | null; }
 export interface Order { id: string; customer_name: string; customer_phone: string; customer_email: string | null; customer_dni: string | null; customer_address: string; customer_notes: string | null; delivery_method: string; total: number; status: string; items: string; user_id: string | null; created_at: string; updated_at: string; }
 
-export function normalizeProduct(p: any): Product {
-  if (!p) return p;
+export function normalizeProduct(p: Record<string, unknown>): Product {
+  if (!p) return {} as Product;
   return {
     id: p.id,
     name: p.name || p.nombre || '',
@@ -106,15 +106,17 @@ export async function createProduct(data: Omit<Product, 'id' | 'created_at' | 'u
 
 export async function updateProduct(id: string, data: Partial<Product>): Promise<boolean> {
   try {
-    const keys = Object.keys(data).filter(k => (data as any)[k] !== undefined && typeof (data as any)[k] !== 'function');
+    const dataObj = data as Record<string, unknown>;
+    const keys = Object.keys(data).filter(k => dataObj[k] !== undefined && typeof dataObj[k] !== 'function');
     if (keys.length === 0) return false;
-    await sql`UPDATE products SET ${sql(data as any, keys)}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await sql`UPDATE products SET ${sql(dataObj as any, keys)}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
     return true;
-  } catch (err) { return false; }
+  } catch { return false; }
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
-  try { await sql`DELETE FROM products WHERE id = ${id}`; return true; } catch (err) { return false; }
+  try { await sql`DELETE FROM products WHERE id = ${id}`; return true; } catch { return false; }
 }
 
 export async function getAllCategories(activeOnly = true): Promise<Category[]> {
@@ -140,15 +142,17 @@ export async function createCategory(data: { name: string; slug: string; descrip
 
 export async function updateCategory(id: string, data: Partial<Category>): Promise<boolean> {
   try {
-    const keys = Object.keys(data).filter(k => (data as any)[k] !== undefined);
+    const dataObj = data as Record<string, unknown>;
+    const keys = Object.keys(data).filter(k => dataObj[k] !== undefined);
     if (keys.length === 0) return false;
-    await sql`UPDATE categories SET ${sql(data as any, keys)} WHERE id = ${id}`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await sql`UPDATE categories SET ${sql(dataObj as any, keys)} WHERE id = ${id}`;
     return true;
-  } catch (e) { return false; }
+  } catch { return false; }
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
-  try { await sql`DELETE FROM categories WHERE id = ${id}`; return true; } catch (e) { return false; }
+  try { await sql`DELETE FROM categories WHERE id = ${id}`; return true; } catch { return false; }
 }
 
 export async function createOrder(data: { 
@@ -194,15 +198,15 @@ export async function createOrder(data: {
     try {
       const pointsEarned = Math.floor(data.total / 100);
       if (pointsEarned > 0) await sql`UPDATE users SET points = points + ${pointsEarned} WHERE id = ${data.user_id}`;
-    } catch (error) {}
+    } catch { }
   }
   return id;
 }
 
 export async function getAllOrders(): Promise<Order[]> { return (await sql`SELECT * FROM orders ORDER BY created_at DESC`) as Order[]; }
 export async function getOrderById(id: string): Promise<Order | null> { const result = await sql`SELECT * FROM orders WHERE id = ${id}`; return (result[0] as Order) || null; }
-export async function updateOrderStatus(id: string, status: string): Promise<boolean> { try { await sql`UPDATE orders SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`; return true; } catch (error) { return false; } }
-export async function deleteOrder(id: string): Promise<boolean> { try { await sql`DELETE FROM orders WHERE id = ${id}`; return true; } catch (error) { return false; } }
+export async function updateOrderStatus(id: string, status: string): Promise<boolean> { try { await sql`UPDATE orders SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`; return true; } catch { return false; } }
+export async function deleteOrder(id: string): Promise<boolean> { try { await sql`DELETE FROM orders WHERE id = ${id}`; return true; } catch { return false; } }
 export async function getRecentOrders(limit = 10): Promise<Order[]> { return (await sql`SELECT * FROM orders ORDER BY created_at DESC LIMIT ${limit}`) as Order[]; }
 
 export async function getStats() {

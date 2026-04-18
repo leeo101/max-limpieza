@@ -5,7 +5,11 @@ import { jwtVerify } from 'jose';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const JWT_SECRET = process.env.JWT_SECRET || 'max-limpieza-secret-key-2024-change-in-production';
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    console.error('[Middleware] CRITICAL: JWT_SECRET is not defined');
+    return NextResponse.redirect(new URL('/admin/login', request.url));
+  }
   const secret = new TextEncoder().encode(JWT_SECRET);
 
   // Protect all /admin routes

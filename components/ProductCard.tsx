@@ -1,6 +1,21 @@
-import { ShoppingCart, MessageCircle, Heart } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { ShoppingCart, MessageCircle, Heart, Package } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import { useStore } from '@/store/useStore';
+
+interface ProductCardProps {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string | null;
+  category_name?: string;
+  bestseller: number;
+  featured: number;
+  averageRating?: number;
+  reviewCount?: number;
+}
 
 export default function ProductCard({ id, name, description, price, image, category_name, bestseller, featured, averageRating, reviewCount }: ProductCardProps) {
   const { addToCart, toggleWishlist, isInWishlist } = useStore();

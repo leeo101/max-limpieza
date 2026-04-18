@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     const activeOnly = searchParams.get('activeOnly') !== 'false';
     const products = await getAllProducts(activeOnly);
     return NextResponse.json({ success: true, data: products });
-  } catch (err: any) {
-    console.error('API Error (GET products):', err.message || err);
+  } catch (err: unknown) {
+    console.error('API Error (GET products):', err instanceof Error ? err.message : 'Unknown error');
     return NextResponse.json({ success: false, error: 'Error fetching products' }, { status: 500 });
   }
 }
