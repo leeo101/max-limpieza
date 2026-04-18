@@ -67,8 +67,7 @@ export async function POST(request: NextRequest) {
         const sql = (await import('@/lib/db')).default;
         console.log('Attempting auto-migration for is_wholesale...');
         await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_wholesale INTEGER DEFAULT 0`;
-        // One-time retry
-        const body = await request.clone().json();
+        // One-time retry using the body we already have
         const { createProduct } = await import('@/lib/products');
         const id = await createProduct({
           name: body.name,
