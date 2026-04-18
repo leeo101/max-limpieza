@@ -60,6 +60,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: { id } });
   } catch (err: any) {
     console.error('Create product error:', err);
+    
+    // Auto-fix if column is missing
+    if (err.message && err.message.includes('is_wholesale')) {
+      try {
+        const sql = (await import('@/lib/db')).default;
+        console.log('Attempting auto-migration for is_wholesale...');
+        await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_wholesale INTEGER DEFAULT 0`;
+        // One-time retry
+        const body = await request.clone().json();
+        const { createProduct } = await import('@/lib/products');
+        const id = await createProduct({
+          name: body.name,
+          description: body.description,
+          price: parseFloat(body.price),
+          stock: parseInt(body.stock) || 0,
+          category_id: body.category_id || null,
+          image: body.image || null,
+          images: body.images ? JSON.stringify(body.images) : null,
+          sku: body.sku || null,
+          active: body.active !== undefined ? body.active : 1,
+          featured: body.featured || 0,
+          bestseller: body.bestseller || 0,
+          is_wholesale: body.is_wholesale || 0,
+        });
+        return NextResponse.json({ success: true, data: { id }, message: 'Database patched automatically' });
+      } catch (migrationErr: any) {
+        return NextResponse.json({ success: false, error: 'Database error: ' + migrationErr.message }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({ 
       success: false, 
       error: err.message || 'Error al crear el producto en la base de datos' 
