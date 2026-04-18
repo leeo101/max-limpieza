@@ -4,41 +4,59 @@ import { jwtVerify } from 'jose';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   const JWT_SECRET = process.env.JWT_SECRET || 'max-limpieza-secret-key-2024-change-in-production';
   const secret = new TextEncoder().encode(JWT_SECRET);
 
-  // Check if the path is under /admin
+  // Protect all /admin routes
   if (pathname.startsWith('/admin')) {
     // Allow /admin/login without token
     if (pathname === '/admin/login') {
       return NextResponse.next();
     }
 
-    // Check for admin token in cookie or authorization header
-    const adminToken = request.cookies.get('adminToken')?.value || 
-                       request.headers.get('authorization')?.split(' ')[1];
+    // Check for admin token in cookie (set during login) or Authorization header
+    const adminToken =
+      request.cookies.get('adminToken')?.value ||
+      request.headers.get('authorization')?.split(' ')[1];
 
     if (!adminToken) {
-      // Redirect to login if no token
+      // No token → redirect to login
       const loginUrl = new URL('/admin/login', request.url);
       return NextResponse.redirect(loginUrl);
     }
 
     try {
-      // Verify the token validity and its payload
+      // Verify the JWT signature and expiry
       const { payload } = await jwtVerify(adminToken, secret);
-      
-      // Strict role check: must be admin to access /admin routes
+
+      // Double-check role: MUST be exactly 'admin'
       if (payload.role !== 'admin') {
+        console.warn(
+          `[Middleware] Access denied: user role '${payload.role}' is not 'admin'. Path: ${pathname}`
+        );
+        // Clear the invalid token cookie and redirect to login
         const loginUrl = new URL('/admin/login', request.url);
-        return NextResponse.redirect(loginUrl);
+        const response = NextResponse.redirect(loginUrl);
+        response.cookies.delete('adminToken');
+        return response;
       }
-    } catch (err: any) {
-      // If token is invalid or expired, redirect to login
-      console.error('Security middleware: Access denied / Invalid token:', err.message);
+
+      // All good — attach admin info to headers for downstream use
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-admin-id', String(payload.id ?? ''));
+      requestHeaders.set('x-admin-email', String(payload.email ?? ''));
+
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    } catch (err: unknown) {
+      // Token is invalid or expired → clear cookie and redirect to login
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[Middleware] Invalid/expired admin token:', message);
+
       const loginUrl = new URL('/admin/login', request.url);
-      return NextResponse.redirect(loginUrl);
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete('adminToken');
+      return response;
     }
   }
 

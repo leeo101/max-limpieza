@@ -231,7 +231,7 @@ export default function HomePage() {
 
           <div className="relative max-w-4xl mx-auto">
             {/* Carousel Content */}
-            <div className="relative h-[300px] md:h-[250px]">
+            <div className="relative min-h-[320px] sm:min-h-[280px] md:min-h-[250px] h-auto">
               {testimonials.map((testimonial, index) => (
                 <div
                   key={index}
@@ -240,7 +240,7 @@ export default function HomePage() {
                       : 'opacity-0 translate-x-full scale-95 pointer-events-none'
                     }`}
                 >
-                  <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-sky-100 relative h-full flex flex-col justify-center">
+                  <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-12 shadow-xl border border-sky-100 relative flex flex-col justify-center">
                     <div className="absolute top-6 left-8 opacity-10">
                       <svg width="60" height="45" viewBox="0 0 60 45" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M17.1429 0L24.2857 7.25806C16.4286 16.6935 15.7143 23.2258 15.7143 27.5806H25.7143V45H0V28.3065C0 12.3387 7.85714 2.90323 17.1429 0ZM51.4286 0L58.5714 7.25806C50.7143 16.6935 50 23.2258 50 27.5806H60V45H34.2857V28.3065C34.2857 12.3387 42.1429 2.90323 51.4286 0Z" fill="#0EA5E9" />
@@ -253,7 +253,7 @@ export default function HomePage() {
                       ))}
                     </div>
 
-                    <p className="text-xl md:text-2xl text-gray-700 italic leading-relaxed mb-8 relative z-10">
+                    <p className="text-base sm:text-xl md:text-2xl text-gray-700 italic leading-relaxed mb-6 relative z-10">
                       &quot;{testimonial.text}&quot;
                     </p>
 
