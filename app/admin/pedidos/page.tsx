@@ -293,7 +293,7 @@ export default function AdminOrdersPage() {
         o.delivery_method,
         o.total,
         o.status,
-        items
+        itemsStr
       ];
     });
 

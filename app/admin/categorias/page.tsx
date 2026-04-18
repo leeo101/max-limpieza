@@ -7,13 +7,13 @@ import {
   MoreVertical, 
   Edit2, 
   Trash2, 
-  Category as CategoryIcon,
+  LayoutGrid as CategoryIcon,
   Tag,
   CheckCircle,
   XCircle,
   ChevronRight
 } from 'lucide-react';
-import Modal from '@/components/Modal';
+import Modal from '@/components/ui/Modal';
 import { toast } from 'react-hot-toast';
 
 interface Category {

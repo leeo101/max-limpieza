@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from './db';
 import { sendWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from './email';
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
 if (!JWT_SECRET) {
   throw new Error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is missing. Authentication will fail.');

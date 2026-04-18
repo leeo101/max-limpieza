@@ -18,7 +18,7 @@ import {
   X,
   AlertCircle
 } from 'lucide-react';
-import Modal from '@/components/Modal';
+import Modal from '@/components/ui/Modal';
 import { toast } from 'react-hot-toast';
 
 interface Product {
