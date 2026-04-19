@@ -93,6 +93,7 @@ export default function AdminProductsPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'all' | 'retail' | 'wholesale'>('all');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -168,7 +169,7 @@ export default function AdminProductsPage() {
         active: 1,
         featured: 0,
         bestseller: 0,
-        is_wholesale: 0,
+        is_wholesale: activeTab === 'wholesale' ? 1 : 0,
       });
     }
     setShowModal(true);
@@ -286,10 +287,14 @@ export default function AdminProductsPage() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.category_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         p.category_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeTab === 'retail') return matchesSearch && !p.is_wholesale;
+    if (activeTab === 'wholesale') return matchesSearch && p.is_wholesale;
+    return matchesSearch;
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -308,16 +313,51 @@ export default function AdminProductsPage() {
         </button>
       </div>
 
-      {/* Tool bar */}
-      <div className="relative group">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-sky-500 transition-colors" />
-        <input
-          type="text"
-          placeholder="Buscar por nombre o categoría..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 rounded-2xl border-none focus:ring-2 focus:ring-sky-500/20 shadow-sm bg-white text-sm font-bold text-gray-700 placeholder:text-gray-300 transition-all"
-        />
+      {/* Tabs and Search Bar */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-1 bg-gray-100 p-1.5 rounded-2xl w-fit">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              activeTab === 'all' 
+              ? 'bg-white text-gray-900 shadow-md translate-y-[-1px]' 
+              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setActiveTab('retail')}
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              activeTab === 'retail' 
+              ? 'bg-white text-sky-600 shadow-md translate-y-[-1px]' 
+              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+          >
+            Minoristas
+          </button>
+          <button
+            onClick={() => setActiveTab('wholesale')}
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              activeTab === 'wholesale' 
+              ? 'bg-white text-emerald-600 shadow-md translate-y-[-1px]' 
+              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+          >
+            Mayoristas
+          </button>
+        </div>
+
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-sky-500 transition-colors" />
+          <input
+            type="text"
+            placeholder={`Buscar en ${activeTab === 'all' ? 'todos' : activeTab === 'retail' ? 'minoristas' : 'mayoristas'}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-4 rounded-2xl border-none focus:ring-2 focus:ring-sky-500/20 shadow-sm bg-white text-sm font-bold text-gray-700 placeholder:text-gray-300 transition-all"
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -403,7 +443,12 @@ export default function AdminProductsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base font-black text-gray-900 uppercase tracking-tight truncate">{p.name}</h3>
-                    <p className="text-[10px] font-bold text-sky-500 uppercase tracking-widest mb-2">{p.category_name || 'Sin categoría'}</p>
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-[10px] font-bold text-sky-500 uppercase tracking-widest">{p.category_name || 'Sin categoría'}</p>
+                      {p.is_wholesale === 1 && (
+                        <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase rounded">Mayorista</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-black text-gray-900">${p.price.toLocaleString('es-AR')}</span>
                     </div>

@@ -197,20 +197,20 @@ export async function initializeDatabase() {
 
   // Insert default categories
   const defaultCategories = [
-    { id: 'cat-001', name: 'Detergentes', slug: 'detergentes', description: 'Detergentes líquidos y en polvo para todo tipo de superficies' },
-    { id: 'cat-002', name: 'Desengrasantes', slug: 'desengrasantes', description: 'Desengrasantes industriales y domésticos de alta potencia' },
-    { id: 'cat-003', name: 'Perfuminas', slug: 'perfuminas', description: 'Ambientadores y perfumes para el hogar' },
-    { id: 'cat-004', name: 'Limpieza Automotriz', slug: 'limpieza-automotriz', description: 'Productos especializados para vehículos' },
-    { id: 'cat-005', name: 'Desinfectantes', slug: 'desinfectantes', description: 'Desinfectantes y antibacteriales' },
-    { id: 'cat-006', name: 'Accesorios', slug: 'accesorios', description: 'Escobas, trapos, esponjas y más' },
-    { id: 'cat-007', name: 'Jabón de Ropa', slug: 'jabon-ropa', description: 'Jabones líquidos y en polvo para lavar la ropa' },
+    { id: 'cat-001', name: 'Detergentes', slug: 'detergentes', description: 'Detergentes líquidos y en polvo para todo tipo de superficies', image: '/categories/detergentes.png' },
+    { id: 'cat-002', name: 'Desengrasantes', slug: 'desengrasantes', description: 'Desengrasantes industriales y domésticos de alta potencia', image: '/categories/desengrasantes.png' },
+    { id: 'cat-003', name: 'Perfuminas', slug: 'perfuminas', description: 'Ambientadores y perfumes para el hogar', image: '/categories/perfuminas.png' },
+    { id: 'cat-004', name: 'Limpieza Automotriz', slug: 'limpieza-automotriz', description: 'Productos especializados para vehículos', image: '/categories/limpieza-automotriz.png' },
+    { id: 'cat-005', name: 'Desinfectantes', slug: 'desinfectantes', description: 'Desinfectantes y antibacteriales', image: '/categories/desinfectantes.png' },
+    { id: 'cat-006', name: 'Accesorios', slug: 'accesorios', description: 'Escobas, trapos, esponjas y más', image: '/categories/accesorios.png' },
+    { id: 'cat-007', name: 'Jabón de Ropa', slug: 'jabon-ropa', description: 'Jabones líquidos y en polvo para lavar la ropa', image: '/categories/jabon-ropa.png' },
   ];
 
   for (const cat of defaultCategories) {
     await sql`
-      INSERT INTO categories (id, name, slug, description) 
-      VALUES (${cat.id}, ${cat.name}, ${cat.slug}, ${cat.description})
-      ON CONFLICT (id) DO NOTHING;
+      INSERT INTO categories (id, name, slug, description, image) 
+      VALUES (${cat.id}, ${cat.name}, ${cat.slug}, ${cat.description}, ${cat.image})
+      ON CONFLICT (id) DO UPDATE SET image = EXCLUDED.image;
     `;
   }
 
@@ -230,16 +230,17 @@ export async function initializeDatabase() {
 
   // Insert sample products
   const sampleProducts = [
-    { id: 'prod-001', name: 'Detergente Líquido Premium 1L', description: 'Detergente líquido concentrado biodegradable, ideal para todo tipo de superficies. Rinde hasta 50 limpiezas.', price: 850, stock: 100, category_id: 'cat-001', featured: 1, bestseller: 1 },
+    { id: 'prod-001', name: 'Detergente Líquido Premium 1L', description: 'Detergente líquido concentrado biodegradable, ideal para todo tipo de superficies. Rinde hasta 50 limpiezas.', price: 850, stock: 100, category_id: 'cat-001', image: '/categories/detergentes.png', featured: 1, bestseller: 1 },
     { id: 'prod-002', name: 'Detergente en Polvo 500g', description: 'Detergente en polvo de alta concentración con fórmulas activa contra la grasa.', price: 650, stock: 80, category_id: 'cat-001', featured: 0, bestseller: 1 },
-    { id: 'prod-003', name: 'Desengrasante Industrial 1L', description: 'Desengrasante profesional para cocinas industriales, motores y maquinaria. Acción rápida.', price: 1200, stock: 50, category_id: 'cat-002', featured: 1, bestseller: 0 },
-    { id: 'prod-004', name: 'Ambientador Lavanda 500ml', description: 'Perfume ambiental de larga duración con aroma a lavanda fresca. Elimina malos olores.', price: 750, stock: 120, category_id: 'cat-003', featured: 1, bestseller: 1 },
-    { id: 'prod-005', name: 'Shampoo Automotriz 1L', description: 'Shampoo especial para vehículos con cera integrada. Protege la pintura.', price: 1500, stock: 40, category_id: 'cat-004', featured: 0, bestseller: 0 },
-    { id: 'prod-006', name: 'Desinfectante Multiusos 1L', description: 'Desinfectante antibacterial que elimina el 99.9% de gérmenes y bacterias.', price: 900, stock: 90, category_id: 'cat-005', featured: 1, bestseller: 1 },
-    { id: 'prod-007', name: 'Kit de Limpieza Básico', description: 'Incluye: escoba, recogedor, trapo de piso y esponja multiusos.', price: 2500, stock: 30, category_id: 'cat-006', featured: 1, bestseller: 0 },
+    { id: 'prod-003', name: 'Desengrasante Industrial 1L', description: 'Desengrasante profesional para cocinas industriales, motores y maquinaria. Acción rápida.', price: 1200, stock: 50, category_id: 'cat-002', image: '/categories/desengrasantes.png', featured: 1, bestseller: 0 },
+    { id: 'prod-004', name: 'Ambientador Lavanda 500ml', description: 'Perfume ambiental de larga duración con aroma a lavanda fresca. Elimina malos olores.', price: 750, stock: 120, category_id: 'cat-003', image: '/categories/perfuminas.png', featured: 1, bestseller: 1 },
+    { id: 'prod-005', name: 'Shampoo Automotriz 1L', description: 'Shampoo especial para vehículos con cera integrada. Protege la pintura.', price: 1500, stock: 40, category_id: 'cat-004', image: '/categories/limpieza-automotriz.png', featured: 0, bestseller: 0 },
+    { id: 'prod-006', name: 'Desinfectante Multiusos 1L', description: 'Desinfectante antibacterial que elimina el 99.9% de gérmenes y bacterias.', price: 900, stock: 90, category_id: 'cat-005', image: '/categories/desinfectantes.png', featured: 1, bestseller: 1 },
+    { id: 'prod-007', name: 'Kit de Limpieza Básico', description: 'Incluye: escoba, recogedor, trapo de piso y esponja multiusos.', price: 2500, stock: 30, category_id: 'cat-006', image: '/categories/accesorios.png', featured: 1, bestseller: 0 },
     { id: 'prod-008', name: 'Limpiavidrios 500ml', description: 'Limpiavidrios profesional sin rayas. Secado rápido con brillo extra.', price: 680, stock: 70, category_id: 'cat-001', featured: 0, bestseller: 0 },
     { id: 'prod-cloro', name: 'Cloro (Hipoclorito de Sodio)', description: 'Solución de hipoclorito de sodio al 5.5% para desinfección total de superficies y agua. Elimina virus, bacterias y hongos.', price: 500, stock: 150, category_id: 'cat-005', image: '/uploads/cloro.png', featured: 1, bestseller: 1 },
   ];
+
 
   for (const prod of sampleProducts) {
     await sql`
