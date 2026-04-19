@@ -179,9 +179,15 @@ export default function ProductDetailPage() {
                   </div>
                 )}
                 
-                {product.bestseller === 1 && (
-                  <span className="absolute top-8 left-8 bg-amber-400 text-amber-950 px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl">🔥 Más vendido</span>
-                )}
+                {/* Badges */}
+                <div className="absolute top-4 sm:top-8 left-4 sm:left-8 flex flex-col gap-2 z-10 pointer-events-none">
+                  {!!product.bestseller && (
+                    <span className="bg-amber-400 text-amber-950 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full font-black text-[8px] sm:text-[10px] uppercase tracking-widest shadow-xl w-fit">🔥 Más vendido</span>
+                  )}
+                  {!!product.featured && (
+                    <span className="bg-sky-500 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full font-black text-[8px] sm:text-[10px] uppercase tracking-widest shadow-xl w-fit">⭐ PROMO</span>
+                  )}
+                </div>
               </div>
 
               {/* Thumbnails (Simulated for now) */}

@@ -53,12 +53,12 @@ export default function ProductCard({ id, name, description, price, image, categ
         </Link>
 
         {/* Badges */}
-        <div className="absolute top-4 left-4 flex flex-col gap-1.5">
-          {bestseller && (
-            <span className="px-2 py-1 bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest rounded-md shadow-sm">🔥 TOP</span>
+        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 flex flex-col gap-1 sm:gap-1.5 z-10 pointer-events-none">
+          {!!bestseller && (
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-400 text-amber-950 text-[8px] sm:text-[10px] font-black uppercase tracking-widest rounded-md shadow-sm whitespace-nowrap">🔥 TOP</span>
           )}
-          {featured && (
-            <span className="px-2 py-1 bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest rounded-md shadow-sm">⭐ PROMO</span>
+          {!!featured && (
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-sky-500 text-white text-[8px] sm:text-[10px] font-black uppercase tracking-widest rounded-md shadow-sm whitespace-nowrap">⭐ PROMO</span>
           )}
         </div>
 
