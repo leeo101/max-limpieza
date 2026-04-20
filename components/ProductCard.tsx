@@ -107,28 +107,28 @@ export default function ProductCard({ id, name, description, price, image, categ
           {description}
         </p>
 
-        <div className="flex items-center justify-between mt-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-auto gap-3 sm:gap-2">
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter leading-none">Precio</span>
-            <span className="text-xl sm:text-2xl font-black text-sky-600 tracking-tighter mt-1">
+            <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-tighter leading-none">Precio</span>
+            <span className="text-lg sm:text-2xl font-black text-sky-600 tracking-tighter mt-0.5 sm:mt-1">
               ${price.toLocaleString('es-AR')}
             </span>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 sm:gap-2">
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-3 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-90 lg:hidden"
+              className="p-2 sm:p-3 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-90 lg:hidden"
             >
-              <MessageCircle size={20} />
+              <MessageCircle size={18} className="sm:w-5 sm:h-5" />
             </a>
             <button
               onClick={handleAddToCart}
-              className="p-3 bg-sky-500 text-white rounded-xl shadow-lg shadow-sky-500/20 hover:bg-sky-600 transition-all active:scale-95 lg:p-4"
+              className="p-2 sm:p-3 bg-sky-500 text-white rounded-xl shadow-lg shadow-sky-500/20 hover:bg-sky-600 transition-all active:scale-95 lg:p-4"
             >
-              <ShoppingCart size={20} className="lg:hidden" />
+              <ShoppingCart size={18} className="sm:w-5 sm:h-5 lg:hidden" />
               <span className="hidden lg:inline text-xs font-black uppercase tracking-widest px-2">Agregar</span>
             </button>
           </div>
