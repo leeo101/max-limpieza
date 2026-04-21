@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { MessageCircle, Phone, MapPin, X } from 'lucide-react';
+import Image from 'next/image';
 
 export default function FloatingSupport() {
   const [isOpen, setIsOpen] = useState(false);
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5492645630948';
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] flex flex-col items-end gap-3">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 lg:bottom-10 lg:right-10 z-[100] flex flex-col items-end gap-3">
       {/* Expanded Menu */}
       {isOpen && (
         <div className="flex flex-col gap-2 mb-2 animate-in fade-in slide-in-from-bottom-5 duration-300">
@@ -36,17 +37,22 @@ export default function FloatingSupport() {
       {/* Main Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
-          isOpen ? 'bg-gray-800 rotate-90' : 'bg-gradient-to-br from-sky-500 to-emerald-500 hover:scale-110 active:scale-95'
+        className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.15)] transition-all duration-500 ${
+          isOpen ? 'bg-gray-900 rotate-90' : 'bg-white hover:scale-110 active:scale-95'
         }`}
       >
         <div className="absolute inset-0 rounded-full animate-ping bg-sky-400 opacity-20 pointer-events-none"></div>
         {isOpen ? (
           <X className="w-6 h-6 text-white" />
         ) : (
-          <div className="relative">
-            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 border-2 border-white rounded-full"></div>
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12">
+            <Image 
+              src="/logo.png" 
+              alt="Ayuda" 
+              fill 
+              className="object-contain mix-blend-multiply"
+            />
+            <div className="absolute top-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full animate-pulse"></div>
           </div>
         )}
       </button>
