@@ -46,6 +46,7 @@ import FloatingSupport from "@/components/FloatingSupport";
 import ToastProvider from "@/components/ToastProvider";
 import MiniCart from "@/components/MiniCart";
 import PromoBanner from "@/components/PromoBanner";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 export default function RootLayout({
   children,
@@ -54,12 +55,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="antialiased scroll-smooth" suppressHydrationWarning>
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="MAX Limpieza" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-tilecolor" content="#0284c7" />
+        <meta name="msapplication-tap-highlight" content="no" />
+      </head>
+      <body className="antialiased scroll-smooth pb-20 md:pb-0" suppressHydrationWarning>
         <PromoBanner />
         {children}
         <ToastProvider />
         <FloatingSupport />
         <MiniCart />
+        <MobileBottomNav />
       </body>
     </html>
   );
