@@ -14,6 +14,7 @@ import {
   X,
   Package,
   TrendingUp,
+  ChevronRight,
 } from 'lucide-react';
 
 interface Product {
@@ -152,7 +153,7 @@ export default function Header() {
                 onFocus={() => searchQuery.length > 1 && setShowSuggestions(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar productos..."
-                className="w-full px-5 py-3 pl-12 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700 transition-all placeholder:text-gray-400"
+                className="w-full px-5 py-3 pl-12 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-sky-500 font-bold text-gray-700 transition-all placeholder:text-gray-400 group-focus-within:bg-white group-focus-within:shadow-inner"
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
@@ -161,13 +162,16 @@ export default function Header() {
             <AnimatePresence>
               {showSuggestions && suggestions.length > 0 && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-14 left-0 w-full bg-white rounded-3xl shadow-2xl border border-gray-100 p-3 z-[100]"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute top-14 left-0 w-full bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 p-3 z-[100]"
                 >
-                  <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Sugerencias</p>
-                  {suggestions.map((p) => (
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-gray-50 mb-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">¿Buscabas esto?</p>
+                    <span className="text-[10px] font-black text-sky-500 uppercase tracking-widest bg-sky-50 px-2 py-0.5 rounded-md">{suggestions.length} resultados</span>
+                  </div>
+                  {suggestions.map((p: any) => (
                     <button
                       key={p.id}
                       onClick={() => {
@@ -175,18 +179,37 @@ export default function Header() {
                         setShowSuggestions(false);
                         setSearchQuery('');
                       }}
-                      className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-2xl transition-all group"
+                      className="flex items-center gap-4 w-full p-3 hover:bg-gray-50 rounded-2xl transition-all group/item text-left"
                     >
-                      <div className="w-10 h-10 bg-gray-50 rounded-lg flex-shrink-0 relative overflow-hidden">
+                      <div className="w-12 h-12 bg-gray-50 rounded-xl flex-shrink-0 relative overflow-hidden border border-gray-100 group-hover/item:border-sky-100">
                         {p.image ? (
-                          <Image src={p.image} alt={p.name} fill className="object-contain p-1" />
+                          <Image src={p.image} alt={p.name} fill className="object-contain p-1.5 mix-blend-multiply group-hover/item:scale-110 transition-transform duration-500" />
                         ) : (
                           <Package className="w-full h-full p-2 text-gray-200" />
                         )}
                       </div>
-                      <span className="text-sm font-bold text-gray-700 group-hover:text-sky-600 transition-colors uppercase tracking-tight">{p.name}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-sm font-black text-gray-800 group-hover/item:text-sky-600 transition-colors uppercase tracking-tight truncate">{p.name}</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs font-black text-sky-600">${p.price.toLocaleString('es-AR')}</span>
+                          {p.category_name && (
+                            <>
+                              <span className="w-1 h-1 bg-gray-200 rounded-full" />
+                              <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{p.category_name}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-gray-200 group-hover/item:text-sky-500 group-hover/item:translate-x-1 transition-all" />
                     </button>
                   ))}
+                  <Link 
+                    href={`/tienda?search=${encodeURIComponent(searchQuery)}`}
+                    onClick={() => setShowSuggestions(false)}
+                    className="block w-full text-center py-3 mt-2 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-sky-500 transition-colors border-t border-gray-50"
+                  >
+                    Ver todos los resultados para "{searchQuery}"
+                  </Link>
                 </motion.div>
               )}
             </AnimatePresence>

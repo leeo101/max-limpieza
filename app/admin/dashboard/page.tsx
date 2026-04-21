@@ -47,7 +47,9 @@ export default function AdminDashboardPage() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [chartData, setChartData] = useState([]);
+  const [chartDays, setChartDays] = useState(7);
   const [loading, setLoading] = useState(true);
+  const [loadingChart, setLoadingChart] = useState(false);
 
   // Suggested monthly target for the progress bar
   const MONTHLY_TARGET = 500000; 
@@ -61,7 +63,7 @@ export default function AdminDashboardPage() {
           fetch('/api/orders?action=stats', { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch('/api/orders?action=recent&limit=10', { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch('/api/orders?action=inventory', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/orders?action=chart&days=7', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`/api/orders?action=chart&days=${chartDays}`, { headers: { 'Authorization': `Bearer ${token}` } }),
         ]);
 
         const statsData = await statsRes.json();
@@ -81,7 +83,7 @@ export default function AdminDashboardPage() {
     }
 
     fetchData();
-  }, []);
+  }, [chartDays]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -205,11 +207,21 @@ export default function AdminDashboardPage() {
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">Ingresos vs Volumen de Pedidos</p>
           </div>
           <div className="flex bg-gray-50 p-1 rounded-xl">
-            <button className="px-4 py-2 bg-white shadow-sm rounded-lg text-[10px] font-black uppercase tracking-widest text-sky-600">7 Días</button>
-            <button className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400">30 Días</button>
+            <button 
+              onClick={() => setChartDays(7)}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${chartDays === 7 ? 'bg-white shadow-sm text-sky-600' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              7 Días
+            </button>
+            <button 
+              onClick={() => setChartDays(30)}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${chartDays === 30 ? 'bg-white shadow-sm text-sky-600' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              30 Días
+            </button>
           </div>
         </div>
-        <SalesChart data={chartData} loading={loading} />
+        <SalesChart data={chartData} loading={loading || loadingChart} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
