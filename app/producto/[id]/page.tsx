@@ -279,7 +279,7 @@ export default function ProductDetailPage() {
                     {product.category_name}
                   </span>
                 )}
-                <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-[0.9]">{product.name}</h1>
+                <h1 className="text-3xl sm:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-[0.9]">{product.name}</h1>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1">
                     <StarRating rating={product.averageRating || 5} size="sm" />
@@ -295,7 +295,7 @@ export default function ProductDetailPage() {
               <div className="mb-10">
                 <p className="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2">Precio de lista</p>
                 <div className="flex items-baseline gap-3">
-                  <span className="text-5xl font-black text-sky-600 tracking-tighter leading-none">
+                  <span className="text-3xl sm:text-5xl font-black text-sky-600 tracking-tighter leading-none">
                     ${product.price.toLocaleString('es-AR')}
                   </span>
                   <span className="text-gray-300 line-through font-bold text-xl tracking-tighter">

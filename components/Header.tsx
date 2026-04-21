@@ -325,17 +325,56 @@ export default function Header() {
               </button>
             </div>
 
-            <form onSubmit={handleSearch} className="mb-8">
+            <form onSubmit={handleSearch} className="mb-8 relative">
               <div className="relative">
                 <input
                   type="text"
                   value={searchQuery}
+                  onFocus={() => searchQuery.length > 1 && setShowSuggestions(true)}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="¿Qué estás buscando?"
-                  className="w-full px-4 py-3 pl-10 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-sky-500 text-gray-900"
+                  className="w-full px-4 py-3 pl-10 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-sky-500 text-gray-900 font-bold"
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
+
+              {/* Mobile Suggestions Dropdown */}
+              <AnimatePresence>
+                {showSuggestions && suggestions.length > 0 && mobileMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-14 left-0 w-full bg-white rounded-3xl shadow-2xl border border-gray-100 p-2 z-[100] max-h-[60vh] overflow-y-auto"
+                  >
+                    {suggestions.map((p: any) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          router.push(`/producto/${p.id}`);
+                          setShowSuggestions(false);
+                          setMobileMenuOpen(false);
+                          setSearchQuery('');
+                        }}
+                        className="flex items-center gap-3 w-full p-2 hover:bg-gray-50 rounded-xl transition-all group/item text-left"
+                      >
+                        <div className="w-10 h-10 bg-gray-50 rounded-lg flex-shrink-0 relative overflow-hidden border border-gray-100">
+                          {p.image ? (
+                            <Image src={p.image} alt={p.name} fill className="object-contain p-1 mix-blend-multiply" />
+                          ) : (
+                            <Package className="w-full h-full p-2 text-gray-200" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="block text-xs font-black text-gray-800 truncate uppercase tracking-tight">{p.name}</span>
+                          <span className="text-[10px] font-black text-sky-600">${p.price.toLocaleString('es-AR')}</span>
+                        </div>
+                        <ChevronRight size={12} className="text-gray-300" />
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </form>
 
             <nav className="flex flex-col gap-1 overflow-y-auto flex-1">

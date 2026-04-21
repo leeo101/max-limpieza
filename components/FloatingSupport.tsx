@@ -9,7 +9,7 @@ export default function FloatingSupport() {
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5492645630948';
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 lg:bottom-10 lg:right-10 z-[100] flex flex-col items-end gap-3">
+    <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 lg:bottom-10 lg:right-10 z-[100] flex flex-col items-end gap-3">
       {/* Expanded Menu */}
       {isOpen && (
         <div className="flex flex-col gap-2 mb-2 animate-in fade-in slide-in-from-bottom-5 duration-300">

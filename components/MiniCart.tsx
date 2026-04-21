@@ -69,9 +69,9 @@ export default function MiniCart() {
                     </span>
                     <span className="text-gray-400">{Math.round(progress)}%</span>
                   </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                     <div 
-                      className="h-full bg-sky-500 transition-all duration-500 ease-out"
+                      className="h-full bg-sky-500 transition-all duration-700 ease-out shadow-lg"
                       style={{ width: `${progress}%` }}
                     />
                   </div>

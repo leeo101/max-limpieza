@@ -98,7 +98,7 @@ export default function ProductCard({ id, name, description, price, image, categ
         </div>
 
         <Link href={`/producto/${id}`}>
-          <h3 className="text-base sm:text-lg font-black text-gray-900 leading-tight hover:text-sky-600 transition-colors line-clamp-1 mb-2">
+          <h3 className="text-base sm:text-lg font-black text-gray-900 leading-tight hover:text-sky-600 transition-colors line-clamp-2 mb-2">
             {name}
           </h3>
         </Link>
