@@ -22,10 +22,10 @@ export default function MiniCart() {
     .reduce((sum, item) => sum + item.price * item.quantity, 0);
   
   const hasWholesale = wholesaleTotal > 0;
-  const wholesaleMin = 200000;
+  const wholesaleMin = 0;
   const wholesaleConditionMet = wholesaleTotal >= wholesaleMin;
   
-  const retailFreeShippingThreshold = 200000;
+  const retailFreeShippingThreshold = 400000;
   const progress = Math.min((total / retailFreeShippingThreshold) * 100, 100);
 
   const isCheckoutDisabled = hasWholesale && !wholesaleConditionMet;

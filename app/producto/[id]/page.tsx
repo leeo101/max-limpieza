@@ -302,7 +302,7 @@ export default function ProductDetailPage() {
                     ${(product.price * 1.2).toLocaleString('es-AR')}
                   </span>
                 </div>
-                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mt-3">✓ 10% OFF pagando con transferencia</p>
+                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mt-3">✓ 10% OFF en efectivo presencial</p>
               </div>
 
               <div className="space-y-6 mb-12 flex-1">

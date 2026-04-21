@@ -86,8 +86,8 @@ export default function CheckoutPage() {
     .reduce((sum, item) => sum + item.price * item.quantity, 0);
   
   const hasWholesale = wholesaleTotal > 0;
-  const wholesaleMin = 200000;
-  const retailFreeShippingThreshold = 200000;
+  const wholesaleMin = 0;
+  const retailFreeShippingThreshold = 400000;
 
   const isFreeShipping = hasWholesale 
     ? wholesaleTotal >= wholesaleMin 
@@ -381,7 +381,7 @@ export default function CheckoutPage() {
                             Al confirmar, te contactaremos por WhatsApp para coordinar el medio de pago preferido.
                           </p>
                           <div className="p-3 bg-emerald-100 text-emerald-800 rounded-xl text-[10px] font-black uppercase tracking-widest inline-block mx-auto">
-                            🤑 10% OFF pagando en EFECTIVO en el local
+                            🤑 10% OFF en EFECTIVO PRESENCIAL
                           </div>
                         </div>
 
@@ -477,7 +477,7 @@ export default function CheckoutPage() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 text-center leading-relaxed">
                       {hasWholesale 
                         ? '¡Pedido Mayorista Confirmado! Tenés despacho bonificado.' 
-                        : '¡Felicitaciones! Superaste los $200.000 y el despacho es gratuito.'}
+                        : '¡Felicitaciones! Superaste los $400.000 y el despacho es gratuito.'}
                     </p>
                   </div>
                 ) : (
