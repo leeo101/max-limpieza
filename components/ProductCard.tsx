@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, MessageCircle, Heart, Package } from 'lucide-react';
+import { ShoppingCart, MessageCircle, Heart, Package, Check } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import { useStore } from '@/store/useStore';
+import { motion } from 'framer-motion';
+
 
 interface ProductCardProps {
   id: string;
@@ -19,12 +22,16 @@ interface ProductCardProps {
 
 export default function ProductCard({ id, name, description, price, image, category_name, bestseller, featured, averageRating, reviewCount }: ProductCardProps) {
   const { addToCart, toggleWishlist, isInWishlist } = useStore();
+  const [added, setAdded] = useState(false);
   const isFavorite = isInWishlist(id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     addToCart({ id, name, price, image });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
   };
+
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5492645630948';
   const whatsappMessage = encodeURIComponent(`Hola! Me interesa el producto: ${name} - $${price}`);
@@ -73,14 +80,20 @@ export default function ProductCard({ id, name, description, price, image, categ
         </button>
 
         {/* Quick Add Button (Desktop only hover) */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.95 }}
           onClick={handleAddToCart}
-          className="absolute bottom-4 left-4 right-4 py-3 bg-white/90 backdrop-blur-md text-sky-600 font-black text-xs uppercase tracking-widest rounded-xl shadow-xl transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hidden lg:flex items-center justify-center gap-2 hover:bg-sky-600 hover:text-white"
+          className={`absolute bottom-4 left-4 right-4 py-3 font-black text-xs uppercase tracking-widest rounded-xl shadow-xl transform transition-all duration-300 hidden lg:flex items-center justify-center gap-2 ${
+            added 
+              ? 'bg-emerald-500 text-white opacity-100 translate-y-0' 
+              : 'bg-white/90 backdrop-blur-md text-sky-600 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-sky-600 hover:text-white'
+          }`}
         >
-          <ShoppingCart size={14} />
-          Agregar rápido
-        </button>
+          {added ? <Check size={14} /> : <ShoppingCart size={14} />}
+          {added ? '¡Agregado!' : 'Agregar rápido'}
+        </motion.button>
       </div>
+
 
       <div className="p-5 sm:p-6">
         <div className="flex justify-between items-start mb-2">
@@ -116,22 +129,37 @@ export default function ProductCard({ id, name, description, price, image, categ
           </div>
           
           <div className="flex gap-2 sm:gap-2">
-            <a
+            <motion.a
+              whileTap={{ scale: 0.9 }}
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 sm:p-3 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-90 lg:hidden"
+              className="p-2 sm:p-3 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all lg:hidden"
             >
               <MessageCircle size={18} className="sm:w-5 sm:h-5" />
-            </a>
-            <button
+            </motion.a>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={handleAddToCart}
-              className="p-2 sm:p-3 bg-sky-500 text-white rounded-xl shadow-lg shadow-sky-500/20 hover:bg-sky-600 transition-all active:scale-95 lg:p-4"
+              className={`p-2 sm:p-3 rounded-xl shadow-lg transition-all active:scale-95 lg:p-4 flex items-center justify-center ${
+                added 
+                  ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
+                  : 'bg-sky-500 text-white shadow-sky-500/20 hover:bg-sky-600'
+              }`}
             >
-              <ShoppingCart size={18} className="sm:w-5 sm:h-5 lg:hidden" />
-              <span className="hidden lg:inline text-xs font-black uppercase tracking-widest px-2">Agregar</span>
-            </button>
+              <div className="relative w-5 h-5 flex items-center justify-center">
+                {added ? (
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={18} /></motion.div>
+                ) : (
+                  <ShoppingCart size={18} className="lg:hidden" />
+                )}
+              </div>
+              <span className="hidden lg:inline text-xs font-black uppercase tracking-widest px-2">
+                {added ? 'Agregado' : 'Agregar'}
+              </span>
+            </motion.button>
           </div>
+
         </div>
       </div>
     </div>

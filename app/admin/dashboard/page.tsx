@@ -46,6 +46,7 @@ export default function AdminDashboardPage() {
   }
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
   const [chartData, setChartData] = useState([]);
   const [chartDays, setChartDays] = useState(7);
   const [loading, setLoading] = useState(true);
@@ -59,22 +60,25 @@ export default function AdminDashboardPage() {
       const token = localStorage.getItem('adminToken');
       
       try {
-        const [statsRes, ordersRes, inventoryRes, chartRes] = await Promise.all([
+        const [statsRes, ordersRes, inventoryRes, chartRes, topRes] = await Promise.all([
           fetch('/api/orders?action=stats', { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch('/api/orders?action=recent&limit=10', { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch('/api/orders?action=inventory', { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch(`/api/orders?action=chart&days=${chartDays}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/orders?action=top', { headers: { 'Authorization': `Bearer ${token}` } }),
         ]);
 
         const statsData = await statsRes.json();
         const ordersData = await ordersRes.json();
         const inventoryData = await inventoryRes.json();
         const chartDataRes = await chartRes.json();
+        const topData = await topRes.json();
 
         if (statsData.success) setStats(statsData.data);
         if (ordersData.success) setRecentOrders(ordersData.data);
         if (inventoryData.success) setLowStockProducts(inventoryData.data);
         if (chartDataRes.success) setChartData(chartDataRes.data);
+        if (topData.success) setTopProducts(topData.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -84,6 +88,7 @@ export default function AdminDashboardPage() {
 
     fetchData();
   }, [chartDays]);
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -247,8 +252,30 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
+          {/* Top Products Widget */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-sky-500" />
+              Más Vendidos
+            </h3>
+            <div className="space-y-4">
+              {topProducts.slice(0, 5).map((product, index) => (
+                <div key={product.id} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600 font-black text-xs">
+                    #{index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate">{product.name}</p>
+                    <p className="text-xs text-gray-400">$ {product.price.toLocaleString('es-AR')}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Inventory Alerts Widget */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-orange-100">
+
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-orange-500" />
@@ -395,7 +422,8 @@ function StatCard({ title, value, icon, color, trend, highlight }: {
           )}
         </div>
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{title}</p>
-        <p className="text-3xl font-black text-gray-900">{value}</p>
+        <p className="text-2xl sm:text-3xl font-black text-gray-900">{value}</p>
+
       </div>
     </div>
   );

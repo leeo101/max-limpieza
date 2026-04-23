@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { createPasswordResetToken } from '@/lib/auth';
+import { sendEmail, getPasswordResetTemplate } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create reset token
-    const token = createPasswordResetToken(user.id);
+    const token = await createPasswordResetToken(user.id);
 
     if (!token) {
       return NextResponse.json(
@@ -35,16 +36,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In production, you would send an email with the reset link
-    // For now, we'll return the token (you should implement email sending)
-    // TODO: Implement email sending with nodemailer
-    const resetLink = `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/restablecer-contraseña?token=${token}`;
+    // Send email with reset link
+    const emailHtml = getPasswordResetTemplate(token);
+    const emailResult = await sendEmail({
+      to: user.email,
+      subject: 'Restablecer Contraseña - MAX Limpieza',
+      html: emailHtml,
+    });
+
+    if (!emailResult.success) {
+      console.error('Failed to send reset email:', emailResult.error);
+    }
+
+    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/restablecer-contraseña?token=${token}`;
     
     console.log('Password reset link for', user.email, ':', resetLink);
 
     return NextResponse.json({
       message: 'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
-      // Remove this in production - just for testing
       resetLink: process.env.NODE_ENV === 'development' ? resetLink : undefined,
     });
   } catch (error) {
@@ -55,3 +64,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

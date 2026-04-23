@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createOrder, getAllOrders, getOrderById, updateOrderStatus, deleteOrder, getStats, getRecentOrders, getLowStockProducts, getDailySalesStats } from '@/lib/products';
+import { createOrder, getAllOrders, getOrderById, updateOrderStatus, deleteOrder, getStats, getRecentOrders, getLowStockProducts, getDailySalesStats, getTopProducts } from '@/lib/products';
+
 import { sendOrderConfirmationToCustomer, sendOrderNotification } from '@/lib/email';
 import { verifyToken } from '@/lib/auth';
 import { orderLimiter } from '@/lib/rateLimit';
@@ -65,6 +66,12 @@ export async function GET(request: Request) {
       const data = await getDailySalesStats(days);
       return NextResponse.json({ success: true, data });
     }
+
+    if (orderAction === 'top') {
+      const products = await getTopProducts(5);
+      return NextResponse.json({ success: true, data: products });
+    }
+
 
     const orders = await getAllOrders();
     return NextResponse.json({ success: true, data: orders });

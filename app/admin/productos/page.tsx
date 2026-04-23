@@ -16,8 +16,10 @@ import {
   ChevronRight,
   Upload,
   X,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
+
 import Modal from '@/components/ui/Modal';
 import { toast } from 'react-hot-toast';
 
@@ -401,10 +403,21 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-6 py-4 text-sm font-black text-gray-900">${p.price.toLocaleString('es-AR')}</td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs font-black ${p.stock < 10 ? 'text-rose-500' : 'text-gray-500'}`}>
-                        {p.stock} un.
-                      </span>
+                      {p.stock <= 5 ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg border border-rose-100">
+                          <AlertCircle size={12} className="animate-pulse" />
+                          <span className="text-[10px] font-black uppercase tracking-tighter">CRÍTICO: {p.stock}</span>
+                        </div>
+                      ) : p.stock < 10 ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg border border-amber-100">
+                          <AlertTriangle size={12} />
+                          <span className="text-[10px] font-black uppercase tracking-tighter">BAJO: {p.stock}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs font-black text-gray-500">{p.stock} un.</span>
+                      )}
                     </td>
+
                     <td className="px-6 py-4">
                       <div className="flex gap-1">
                         {p.featured === 1 && <Star size={14} className="text-amber-400 fill-amber-400" />}

@@ -10,12 +10,14 @@ import {
   User,
   ChevronDown,
   ShoppingCart,
+  Heart,
   Menu,
   X,
   Package,
   TrendingUp,
   ChevronRight,
 } from 'lucide-react';
+
 
 interface Product {
   id: string;
@@ -51,8 +53,9 @@ export default function Header() {
   const router = useRouter();
 
   // Zustand Store
-  const { cart, setMiniCartOpen } = useStore();
+  const { cart, wishlist, setMiniCartOpen } = useStore();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
 
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
@@ -288,8 +291,21 @@ export default function Header() {
             )}
           </div>
 
-          {/* Cart and mobile menu button */}
-          <div className="flex items-center gap-4">
+          {/* Cart, Wishlist and mobile menu button */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Wishlist Button */}
+            <Link 
+              href="/favoritos"
+              className="relative p-2 text-gray-700 hover:text-sky-600 transition-colors cursor-pointer group"
+            >
+              <Heart className="w-6 h-6 group-hover:scale-110 transition-transform" />
+              {wishlist.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black animate-in zoom-in duration-300">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
+
             <button 
               onClick={() => setMiniCartOpen(true)}
               className="relative p-2 text-gray-700 hover:text-sky-600 transition-colors cursor-pointer group"
@@ -310,6 +326,7 @@ export default function Header() {
               <Menu className="w-6 h-6" />
             </button>
           </div>
+
         </div>
       </div>
 
@@ -380,7 +397,9 @@ export default function Header() {
             <nav className="flex flex-col gap-1 overflow-y-auto flex-1">
               <MobileNavLink href="/mayorista" label="Mayorista" icon={<TrendingUp className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
               <MobileNavLink href="/tienda" label="Productos" icon={<Package className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
+              <MobileNavLink href="/favoritos" label="Favoritos" icon={<Heart className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
               <MobileNavLink href="/combos" label="Combos" icon={<ShoppingCart className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
+
               <MobileNavLink href="/consejos" label="Consejos" icon={<ChevronDown className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
               <MobileNavLink href="/calculadora" label="Calculadora" icon={<Search className="w-5 h-5" />} onClick={() => setMobileMenuOpen(false)} />
             </nav>

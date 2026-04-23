@@ -29,6 +29,8 @@ import { useStore } from '@/store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import ProductCard from '@/components/ProductCard';
+import JsonLd from '@/components/JsonLd';
+
 
 interface Product {
   id: string;
@@ -202,6 +204,35 @@ export default function ProductDetailPage() {
       <Header />
 
       <main className="flex-1">
+        {product && (
+          <JsonLd 
+            data={{
+              "@context": "https://schema.org/",
+              "@type": "Product",
+              "name": product.name,
+              "image": product.image ? [`${window.location.origin}${product.image}`] : [],
+              "description": product.description,
+              "sku": product.id,
+              "brand": {
+                "@type": "Brand",
+                "name": "MAX Limpieza"
+              },
+              "offers": {
+                "@type": "Offer",
+                "url": typeof window !== 'undefined' ? window.location.href : '',
+                "priceCurrency": "ARS",
+                "price": product.price,
+                "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+              },
+              "aggregateRating": product.reviewCount && product.reviewCount > 0 ? {
+                "@type": "AggregateRating",
+                "ratingValue": product.averageRating,
+                "reviewCount": product.reviewCount
+              } : undefined
+            }}
+          />
+        )}
+
         <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
           <div className="flex items-center justify-between mb-4">
             <button 
