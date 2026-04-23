@@ -172,10 +172,12 @@ export async function createOrder(data: {
   postal_code?: string;
   shipping_company?: string;
   shipping_cost?: number;
+  coupon_code?: string | null;
+  discount_amount?: number;
 }): Promise<string> {
   const id = uuidv4();
   await sql`
-    INSERT INTO orders (id, customer_name, customer_phone, customer_email, customer_dni, customer_address, customer_notes, delivery_method, total, items, user_id, province, city, postal_code, shipping_company, shipping_cost)
+    INSERT INTO orders (id, customer_name, customer_phone, customer_email, customer_dni, customer_address, customer_notes, delivery_method, total, items, user_id, province, city, postal_code, shipping_company, shipping_cost, coupon_code, discount_amount)
     VALUES (
       ${id}, 
       ${data.customer_name}, 
@@ -192,7 +194,9 @@ export async function createOrder(data: {
       ${data.city || null},
       ${data.postal_code || null},
       ${data.shipping_company || null},
-      ${data.shipping_cost || 0}
+      ${data.shipping_cost || 0},
+      ${data.coupon_code || null},
+      ${data.discount_amount || 0}
     )
   `;
   if (data.user_id) {

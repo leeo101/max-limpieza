@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, LayoutDashboard, Package, Tags, ShoppingCart, LogOut, Globe, Bell } from 'lucide-react';
+import { Search, LayoutDashboard, Package, Tags, ShoppingCart, LogOut, Globe, Bell, Tag, MessageSquare } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 export default function AdminLayout({
@@ -93,6 +93,8 @@ export default function AdminLayout({
     { name: 'Productos', path: '/admin/productos', icon: Package },
     { name: 'Categorías', path: '/admin/categorias', icon: Tags },
     { name: 'Pedidos', path: '/admin/pedidos', icon: ShoppingCart },
+    { name: 'Cupones', path: '/admin/cupones', icon: Tag },
+    { name: 'Reseñas', path: '/admin/resenas', icon: MessageSquare },
   ];
 
   if (loading) {

@@ -179,6 +179,21 @@ export async function initializeDatabase() {
     );
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS coupons (
+      id TEXT PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      discount_type TEXT NOT NULL,
+      discount_value REAL NOT NULL,
+      min_purchase REAL DEFAULT 0,
+      usage_limit INTEGER,
+      times_used INTEGER DEFAULT 0,
+      expires_at TIMESTAMP,
+      active INTEGER DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   // Indexes (in postgres we don't catch failures for CREATE INDEX IF NOT EXISTS generally)
   await sql`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`;
@@ -294,12 +309,14 @@ export async function initializeDatabase() {
       ON CONFLICT (id) DO NOTHING;
     `;
   }
-  // Check and add customer_dni if it doesn't exist
+  // Check and add customer_dni and coupons if it doesn't exist
   try {
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_dni TEXT`;
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code TEXT`;
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount REAL DEFAULT 0`;
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_wholesale INTEGER DEFAULT 0`;
   } catch (e) {
-    console.log('Migration check complete');
+    console.log('Migration check complete', e);
   }
 }
 

@@ -122,6 +122,8 @@ export async function POST(request: Request) {
       postal_code: body.postal_code,
       shipping_company: body.shipping_company,
       shipping_cost: body.shipping_cost,
+      coupon_code: body.coupon_code,
+      discount_amount: body.discount_amount,
     });
 
     if (body.customer_email) {

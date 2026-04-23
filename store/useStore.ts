@@ -10,6 +10,12 @@ interface CartItem {
   is_wholesale?: number;
 }
 
+export interface Coupon {
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+}
+
 interface StoreState {
   // Cart
   cart: CartItem[];
@@ -17,7 +23,14 @@ interface StoreState {
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  cartSubtotal: () => number;
+  discountAmount: () => number;
   cartTotal: () => number;
+
+  // Coupon
+  appliedCoupon: Coupon | null;
+  applyCoupon: (coupon: Coupon) => void;
+  removeCoupon: () => void;
 
   // Wishlist
   wishlist: string[]; // Store product IDs
@@ -36,6 +49,7 @@ export const useStore = create<StoreState>()(
     (set, get) => ({
       // Cart Initial State
       cart: [],
+      appliedCoupon: null,
       isMiniCartOpen: false,
       wishlist: [],
       pendingOrdersCount: 0,
@@ -90,13 +104,35 @@ export const useStore = create<StoreState>()(
       },
 
       clearCart: () => {
-        set({ cart: [] });
+        set({ cart: [], appliedCoupon: null });
         window.dispatchEvent(new Event('cartUpdated'));
       },
 
-      cartTotal: () => {
+      cartSubtotal: () => {
         return get().cart.reduce((total, item) => total + item.price * item.quantity, 0);
       },
+
+      discountAmount: () => {
+        const subtotal = get().cartSubtotal();
+        const coupon = get().appliedCoupon;
+        if (!coupon) return 0;
+        
+        if (coupon.discount_type === 'percentage') {
+          return (subtotal * coupon.discount_value) / 100;
+        } else {
+          return Math.min(subtotal, coupon.discount_value);
+        }
+      },
+
+      cartTotal: () => {
+        const subtotal = get().cartSubtotal();
+        const discount = get().discountAmount();
+        return Math.max(0, subtotal - discount);
+      },
+
+      // Coupon Actions
+      applyCoupon: (coupon) => set({ appliedCoupon: coupon }),
+      removeCoupon: () => set({ appliedCoupon: null }),
 
       // Wishlist Actions
       toggleWishlist: (productId) => {
@@ -120,7 +156,8 @@ export const useStore = create<StoreState>()(
       name: 'max-limpieza-storage', // key in localStorage
       partialize: (state) => ({ 
         cart: state.cart, 
-        wishlist: state.wishlist 
+        wishlist: state.wishlist,
+        appliedCoupon: state.appliedCoupon
       }), // only persist these fields
     }
   )

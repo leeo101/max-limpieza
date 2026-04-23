@@ -13,7 +13,10 @@ import {
   ArrowLeft, 
   ShoppingBag,
   Sparkles,
-  Zap
+  Zap,
+  Tag,
+  X,
+  Loader2
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,9 +32,11 @@ interface Product {
 }
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeFromCart, clearCart, cartTotal, addToCart } = useStore();
+  const { cart, updateQuantity, removeFromCart, clearCart, cartTotal, cartSubtotal, discountAmount, appliedCoupon, applyCoupon, removeCoupon, addToCart } = useStore();
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+  const [couponInput, setCouponInput] = useState('');
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
   useEffect(() => {
     async function fetchSuggestions() {
@@ -56,7 +61,33 @@ export default function CartPage() {
     fetchSuggestions();
   }, [cart]);
 
-  const total = cartTotal();
+  const subtotal = cartSubtotal();
+  const discount = discountAmount();
+  const finalTotal = cartTotal();
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setIsValidatingCoupon(true);
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponInput, cartSubtotal: subtotal })
+      });
+      const data = await res.json();
+      if (data.success) {
+        applyCoupon(data.data);
+        toast.success('Cupón aplicado con éxito');
+        setCouponInput('');
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error('Error al validar cupón');
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
 
   if (cart.length === 0) {
     return (
@@ -228,21 +259,58 @@ export default function CartPage() {
                 
                 <h2 className="text-2xl font-black text-gray-900 mb-8 uppercase tracking-tighter">Resumen</h2>
 
-                <div className="space-y-6 mb-10">
+                <div className="space-y-6 mb-8">
                   <div className="flex justify-between items-center text-gray-400">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Productos ({cart.reduce((sum, item) => sum + item.quantity, 0)})</span>
-                    <span className="text-sm font-bold">${total.toLocaleString('es-AR')}</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)})</span>
+                    <span className="text-sm font-bold">${subtotal.toLocaleString('es-AR')}</span>
                   </div>
+                  
+                  {appliedCoupon && (
+                    <div className="flex justify-between items-center text-emerald-500">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1">
+                        <Tag size={12} /> {appliedCoupon.code}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold">- ${discount.toLocaleString('es-AR')}</span>
+                        <button onClick={removeCoupon} className="text-rose-400 hover:text-rose-600">
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center text-emerald-500">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Envío</span>
                     <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg">A calcular</span>
                   </div>
+                  
+                  {!appliedCoupon && (
+                    <div className="pt-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponInput}
+                          onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                          placeholder="CÓDIGO DE DESCUENTO"
+                          className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                        <button
+                          onClick={handleApplyCoupon}
+                          disabled={isValidatingCoupon || !couponInput.trim()}
+                          className="bg-gray-900 text-white px-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black disabled:opacity-50 flex items-center justify-center transition-colors"
+                        >
+                          {isValidatingCoupon ? <Loader2 size={16} className="animate-spin" /> : 'Aplicar'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="pt-6 border-t border-gray-50">
                     <div className="flex justify-between items-end">
                       <div>
                         <p className="text-[10px] font-black text-sky-500 uppercase tracking-[0.3em] mb-2 leading-none">Total Final</p>
                         <p className="text-5xl font-black text-gray-900 tracking-tighter leading-none">
-                          ${total.toLocaleString('es-AR')}
+                          ${finalTotal.toLocaleString('es-AR')}
                         </p>
                       </div>
                     </div>
@@ -273,7 +341,7 @@ export default function CartPage() {
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.1em] mb-1">Puntos MAX</p>
-                      <p className="text-xs font-bold text-gray-500 leading-tight">Sumarás <span className="font-black text-gray-900">{Math.floor(total / 100)} puntos</span> con esta compra.</p>
+                      <p className="text-xs font-bold text-gray-500 leading-tight">Sumarás <span className="font-black text-gray-900">{Math.floor(finalTotal / 100)} puntos</span> con esta compra.</p>
                     </div>
                   </div>
                 </div>

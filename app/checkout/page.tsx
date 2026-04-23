@@ -14,13 +14,15 @@ import {
   Truck, 
   ArrowLeft,
   CreditCard,
-  MessageCircle
+  MessageCircle,
+  Tag,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, clearCart } = useStore();
+  const { cart, clearCart, cartTotal, cartSubtotal, discountAmount, appliedCoupon, removeCoupon } = useStore();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -80,7 +82,9 @@ export default function CheckoutPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = cartSubtotal();
+  const discount = discountAmount();
+  const total = cartTotal();
   const wholesaleTotal = cart
     .filter(item => item.is_wholesale === 1)
     .reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -121,6 +125,8 @@ export default function CheckoutPage() {
           postal_code: formData.customer_postal_code,
           shipping_company: formData.delivery_method === 'delivery' ? formData.shipping_company : null,
           total,
+          coupon_code: appliedCoupon ? appliedCoupon.code : null,
+          discount_amount: discount,
           items: cart,
         }),
       });
@@ -450,8 +456,15 @@ export default function CheckoutPage() {
                 <div className="pt-6 border-t border-gray-100 space-y-2.5">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
                     <span>Subtotal {hasWholesale ? 'General' : ''}</span>
-                    <span>${total.toLocaleString('es-AR')}</span>
+                    <span>${subtotal.toLocaleString('es-AR')}</span>
                   </div>
+
+                  {appliedCoupon && (
+                    <div className="flex justify-between items-center text-emerald-500 text-xs font-bold uppercase tracking-widest">
+                      <span className="flex items-center gap-1"><Tag size={12} /> {appliedCoupon.code}</span>
+                      <span>- ${discount.toLocaleString('es-AR')}</span>
+                    </div>
+                  )}
                   {hasWholesale && (
                     <div className="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
                       <span>Subtotal Mayorista</span>
