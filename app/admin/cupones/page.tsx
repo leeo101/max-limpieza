@@ -39,7 +39,7 @@ export default function AdminCouponsPage() {
     try {
       const res = await fetch('/api/coupons', {
         headers: {
-          'Authorization': \`Bearer \${localStorage.getItem('adminToken')}\`
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });
       const data = await res.json();
@@ -59,7 +59,7 @@ export default function AdminCouponsPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': \`Bearer \${localStorage.getItem('adminToken')}\`
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         },
         body: JSON.stringify({ id, active: !currentStatus })
       });
@@ -84,7 +84,7 @@ export default function AdminCouponsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': \`Bearer \${localStorage.getItem('adminToken')}\`
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         },
         body: JSON.stringify({
           code,
@@ -168,35 +168,35 @@ export default function AdminCouponsPage() {
                     </div>
                     {coupon.min_purchase > 0 && (
                       <div className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest">
-                        Min: $\${coupon.min_purchase.toLocaleString('es-AR')}
+                        Min: ${coupon.min_purchase.toLocaleString('es-AR')}
                       </div>
                     )}
                   </td>
                   <td className="p-4">
-                    <span className={\`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-black \${coupon.discount_type === 'percentage' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}\`}>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-black ${coupon.discount_type === 'percentage' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
                       {coupon.discount_type === 'percentage' ? (
                         <><Percent size={12} /> {coupon.discount_value}%</>
                       ) : (
-                        <><CircleDollarSign size={12} /> $\${coupon.discount_value}</>
+                        <><CircleDollarSign size={12} /> ${coupon.discount_value}</>
                       )}
                     </span>
                   </td>
                   <td className="p-4">
                     <div className="text-sm font-bold text-gray-600">
-                      {coupon.times_used} {coupon.usage_limit ? \`/ \${coupon.usage_limit}\` : 'usos'}
+                      {coupon.times_used} {coupon.usage_limit ? `/ ${coupon.usage_limit}` : 'usos'}
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={\`text-sm font-bold \${coupon.expires_at && new Date(coupon.expires_at) < new Date() ? 'text-rose-500' : 'text-gray-600'}\`}>
+                    <span className={`text-sm font-bold ${coupon.expires_at && new Date(coupon.expires_at) < new Date() ? 'text-rose-500' : 'text-gray-600'}`}>
                       {coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString('es-AR') : 'Sin fecha'}
                     </span>
                   </td>
                   <td className="p-4 text-right">
                     <button
                       onClick={() => handleToggleStatus(coupon.id, coupon.active)}
-                      className={\`relative inline-flex h-6 w-11 items-center rounded-full transition-colors \${coupon.active ? 'bg-sky-500' : 'bg-gray-200'}\`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${coupon.active ? 'bg-sky-500' : 'bg-gray-200'}`}
                     >
-                      <span className={\`inline-block h-4 w-4 transform rounded-full bg-white transition-transform \${coupon.active ? 'translate-x-6' : 'translate-x-1'}\`} />
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${coupon.active ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </td>
                 </tr>

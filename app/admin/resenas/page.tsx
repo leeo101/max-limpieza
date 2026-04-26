@@ -28,7 +28,7 @@ export default function AdminReviewsPage() {
     try {
       const res = await fetch('/api/reviews?all=true', {
         headers: {
-          'Authorization': \`Bearer \${localStorage.getItem('adminToken')}\`
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });
       const data = await res.json();
@@ -44,11 +44,11 @@ export default function AdminReviewsPage() {
 
   const handleApprove = async (id: string, currentStatus: number) => {
     try {
-      const res = await fetch(\`/api/reviews/\${id}\`, {
+      const res = await fetch(`/api/reviews/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': \`Bearer \${localStorage.getItem('adminToken')}\`
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         },
         body: JSON.stringify({ approved: !currentStatus })
       });
@@ -68,10 +68,10 @@ export default function AdminReviewsPage() {
     if (!confirm('¿Estás seguro de eliminar esta reseña? Esta acción no se puede deshacer.')) return;
     
     try {
-      const res = await fetch(\`/api/reviews/\${id}\`, {
+      const res = await fetch(`/api/reviews/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': \`Bearer \${localStorage.getItem('adminToken')}\`
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });
       const data = await res.json();
@@ -105,7 +105,7 @@ export default function AdminReviewsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {reviews.map((review) => (
-          <div key={review.id} className={\`bg-white p-6 rounded-3xl shadow-sm border \${review.approved ? 'border-emerald-100' : 'border-amber-100'}\`}>
+          <div key={review.id} className={`bg-white p-6 rounded-3xl shadow-sm border ${review.approved ? 'border-emerald-100' : 'border-amber-100'}`}>
             <div className="flex justify-between items-start mb-4">
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -117,7 +117,7 @@ export default function AdminReviewsPage() {
                   />
                 ))}
               </div>
-              <span className={\`text-[10px] font-black uppercase px-2 py-1 rounded-md \${review.approved ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}\`}>
+              <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${review.approved ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                 {review.approved ? 'Publicada' : 'Pendiente'}
               </span>
             </div>
@@ -140,7 +140,7 @@ export default function AdminReviewsPage() {
             <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
               <button
                 onClick={() => handleApprove(review.id, review.approved)}
-                className={\`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors \${review.approved ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}\`}
+                className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${review.approved ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
               >
                 {review.approved ? <><XCircle size={14} /> Ocultar</> : <><CheckCircle size={14} /> Aprobar</>}
               </button>

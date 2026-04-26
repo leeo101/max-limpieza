@@ -47,6 +47,8 @@ export default function ShopContent() {
   const [maxPrice, setMaxPrice] = useState(100000);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [filterOferta, setFilterOferta] = useState(false);
+  const [filterDestacado, setFilterDestacado] = useState(false);
   
   const searchQuery = searchParams.get('search') || '';
 
@@ -97,6 +99,13 @@ export default function ShopContent() {
         if (cat && product.category_name !== cat.name) return false;
         if (!cat && product.category_name?.toLowerCase() !== selectedCategory.toLowerCase()) return false;
       }
+      if (filterDestacado && product.featured !== 1) return false;
+      if (filterOferta && product.bestseller !== 1) return false; // Using bestseller as a proxy for "Oferta" or we can just use another criteria, but for now we'll use bestseller. Wait, maybe there's a discount field? Since there isn't, we'll use bestseller. Wait, no, maybe featured is Promo? On product page, featured = PROMO. So featured = oferta? Let's use featured for both or bestseller for destacados.
+      // Let's adjust: "En Oferta" = featured (because the badge says PROMO).
+      // "Destacados" = bestseller (because the badge says Más vendido).
+      // Let's correct it:
+      if (filterOferta && product.featured !== 1) return false;
+      if (filterDestacado && product.bestseller !== 1) return false;
       return true;
     })
     .sort((a, b) => {
@@ -181,6 +190,73 @@ export default function ShopContent() {
 
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="flex flex-col lg:flex-row gap-8">
+            {/* Mobile Filters Modal */}
+            <AnimatePresence>
+              {isMobileFiltersOpen && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsMobileFiltersOpen(false)}
+                    className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 lg:hidden"
+                  />
+                  <motion.div
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className="fixed top-0 right-0 h-full w-[280px] bg-white z-50 lg:hidden shadow-2xl flex flex-col"
+                  >
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 flex items-center gap-2">
+                        <Filter size={16} /> Filtros
+                      </h3>
+                      <button onClick={() => setIsMobileFiltersOpen(false)} className="p-2 text-gray-400 hover:text-gray-900 bg-gray-50 rounded-xl">
+                        <X size={18} />
+                      </button>
+                    </div>
+                    <div className="p-6 flex-1 overflow-y-auto space-y-8">
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Rápidos</h4>
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer group hover:bg-sky-50 transition-colors">
+                            <input type="checkbox" checked={filterOferta} onChange={(e) => setFilterOferta(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover:text-sky-600">En Oferta</span>
+                          </label>
+                          <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer group hover:bg-sky-50 transition-colors">
+                            <input type="checkbox" checked={filterDestacado} onChange={(e) => setFilterDestacado(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover:text-sky-600">Destacados</span>
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Categorías</h4>
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => { setSelectedCategory(''); setIsMobileFiltersOpen(false); }}
+                            className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-colors ${selectedCategory === '' ? 'bg-sky-500 text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                          >
+                            Todas las categorías
+                          </button>
+                          {categories.map(cat => (
+                            <button
+                              key={cat.id}
+                              onClick={() => { setSelectedCategory(cat.slug); setIsMobileFiltersOpen(false); }}
+                              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-colors ${selectedCategory === cat.slug ? 'bg-sky-500 text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
             {/* Sidebar Filters Desktop */}
             <aside className="hidden lg:block w-64 space-y-8 flex-shrink-0">
               <div>
@@ -189,11 +265,11 @@ export default function ShopContent() {
                 </h3>
                 <div className="space-y-2">
                   <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer group hover:bg-sky-50 transition-colors">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500" />
+                    <input type="checkbox" checked={filterOferta} onChange={(e) => setFilterOferta(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover:text-sky-600">En Oferta</span>
                   </label>
                   <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer group hover:bg-sky-50 transition-colors">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500" />
+                    <input type="checkbox" checked={filterDestacado} onChange={(e) => setFilterDestacado(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover:text-sky-600">Destacados</span>
                   </label>
                 </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, LayoutDashboard, Package, Tags, ShoppingCart, LogOut, Globe, Bell, Tag, MessageSquare } from 'lucide-react';
+import { Search, LayoutDashboard, Package, Tags, ShoppingCart, LogOut, Globe, Bell, Tag, MessageSquare, Mail } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 export default function AdminLayout({
@@ -95,6 +95,7 @@ export default function AdminLayout({
     { name: 'Pedidos', path: '/admin/pedidos', icon: ShoppingCart },
     { name: 'Cupones', path: '/admin/cupones', icon: Tag },
     { name: 'Reseñas', path: '/admin/resenas', icon: MessageSquare },
+    { name: 'Abandonos', path: '/admin/carritos-abandonados', icon: Mail },
   ];
 
   if (loading) {
@@ -233,14 +234,14 @@ export default function AdminLayout({
 
       {/* ── Mobile Bottom Navigation Bar ── */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white border-t border-gray-100 shadow-[0_-2px_20px_rgba(0,0,0,0.06)]">
-        <div className="flex items-stretch justify-around px-1 pt-1 pb-2">
+        <div className="flex items-stretch px-2 pt-1 pb-2 overflow-x-auto scrollbar-hide gap-4">
           {navItems.map((item) => {
             const isActive = pathname === item.path;
             return (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 rounded-xl transition-all duration-200 ${
+                className={`flex flex-col items-center justify-center gap-0.5 flex-none min-w-[64px] py-2 rounded-xl transition-all duration-200 ${
                   isActive
                     ? 'text-sky-600'
                     : 'text-gray-400 active:bg-gray-50'
@@ -264,7 +265,7 @@ export default function AdminLayout({
           {/* Logout button */}
           <button
             onClick={logout}
-            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-2 text-red-400 active:bg-red-50 rounded-xl transition-colors"
+            className="flex flex-col items-center justify-center gap-0.5 flex-none min-w-[64px] py-2 text-red-400 active:bg-red-50 rounded-xl transition-colors"
           >
             <div className="p-1.5 rounded-xl">
               <LogOut className="w-5 h-5" />

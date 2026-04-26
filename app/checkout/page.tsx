@@ -22,10 +22,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, clearCart, cartTotal, cartSubtotal, discountAmount, appliedCoupon, removeCoupon } = useStore();
+  const { cart, clearCart, cartTotal, cartSubtotal, discountAmount, appliedCoupon, applyCoupon, removeCoupon } = useStore();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [userPoints, setUserPoints] = useState(0);
 
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -63,6 +64,7 @@ export default function CheckoutPage() {
 
     const userData = JSON.parse(localStorage.getItem('userData') || 'null');
     if (userData) {
+      setUserPoints(userData.points || 0);
       setFormData(prev => ({
         ...prev,
         customer_name: userData.name || '',
@@ -73,10 +75,24 @@ export default function CheckoutPage() {
         customer_province: userData.province || 'San Juan',
         customer_postal_code: userData.postal_code || '',
       }));
+      
+      // Sync abandoned cart
+      if (cart.length > 0) {
+        fetch('/api/cart/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userData.email,
+            name: userData.name,
+            items: cart,
+            total: cartTotal()
+          })
+        }).catch(console.error);
+      }
     }
 
     setLoading(false);
-  }, [cart, router, loading]);
+  }, [cart, router, loading, cartTotal]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -459,10 +475,29 @@ export default function CheckoutPage() {
                     <span>${subtotal.toLocaleString('es-AR')}</span>
                   </div>
 
+                  {userPoints > 0 && !appliedCoupon && (
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => applyCoupon({ code: 'PUNTOS-MAX', discount_type: 'fixed', discount_value: userPoints * 10 })}
+                        className="w-full py-2 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-colors"
+                      >
+                        ⚡ Canjear {userPoints} puntos ($-{(userPoints * 10).toLocaleString('es-AR')})
+                      </button>
+                    </div>
+                  )}
+
                   {appliedCoupon && (
                     <div className="flex justify-between items-center text-emerald-500 text-xs font-bold uppercase tracking-widest">
-                      <span className="flex items-center gap-1"><Tag size={12} /> {appliedCoupon.code}</span>
-                      <span>- ${discount.toLocaleString('es-AR')}</span>
+                      <span className="flex items-center gap-1">
+                        <Tag size={12} /> {appliedCoupon.code}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span>- ${discount.toLocaleString('es-AR')}</span>
+                        <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500">
+                          <X size={14} />
+                        </button>
+                      </div>
                     </div>
                   )}
                   {hasWholesale && (

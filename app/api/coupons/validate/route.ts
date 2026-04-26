@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     if (coupon.min_purchase && cartSubtotal < coupon.min_purchase) {
       return NextResponse.json({ 
         success: false, 
-        error: \`Este cupón requiere una compra mínima de $\${coupon.min_purchase}\` 
+        error: `Este cupón requiere una compra mínima de $${coupon.min_purchase}` 
       }, { status: 400 });
     }
 

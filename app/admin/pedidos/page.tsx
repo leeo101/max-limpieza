@@ -465,7 +465,7 @@ export default function AdminOrdersPage() {
                           className="flex items-center gap-2 px-4 py-2.5 bg-sky-500 text-white rounded-xl text-sm font-bold hover:bg-sky-600 active:scale-95 transition-all shadow-md shadow-sky-500/10"
                         >
                           <FileDown className="w-4 h-4" />
-                          <span>PDF</span>
+                          <span>Remito PDF</span>
                         </button>
                       </div>
                     </div>

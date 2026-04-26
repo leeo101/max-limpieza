@@ -194,6 +194,19 @@ export async function initializeDatabase() {
     );
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS abandoned_carts (
+      id TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL,
+      user_name TEXT,
+      items TEXT NOT NULL,
+      total REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   // Indexes (in postgres we don't catch failures for CREATE INDEX IF NOT EXISTS generally)
   await sql`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`;

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send welcome email (non-blocking)
-    sendWelcomeEmail({ name, email }).catch(err => {
+    sendWelcomeEmail({ name, email }).catch((err: any) => {
       console.error('Error sending welcome email:', err);
     });
 

@@ -130,3 +130,39 @@ export async function sendOrderNotification(data: any) {
     html,
   });
 }
+
+export async function sendWelcomeEmail(data: { name: string; email: string }) {
+  const html = `
+    <h1>¡Bienvenido/a a MAX Limpieza, ${data.name}!</h1>
+    <p>Gracias por registrarte en nuestra plataforma.</p>
+    <p>Ahora podés disfrutar de beneficios exclusivos, realizar pedidos más rápido y acceder a descuentos por volumen.</p>
+  `;
+  return sendEmail({
+    to: data.email,
+    subject: '¡Bienvenido/a a MAX Limpieza!',
+    html,
+  });
+}
+
+export async function sendVerificationEmail(email: string, token: string) {
+  const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verificar-email?token=${token}`;
+  const html = `
+    <h1>Verificá tu correo</h1>
+    <p>Hacé clic en el siguiente enlace para verificar tu cuenta:</p>
+    <a href="${verificationLink}">Verificar Cuenta</a>
+  `;
+  return sendEmail({
+    to: email,
+    subject: 'Verificá tu correo - MAX Limpieza',
+    html,
+  });
+}
+
+export async function sendPasswordResetEmail(email: string, token: string) {
+  const html = getPasswordResetTemplate(token);
+  return sendEmail({
+    to: email,
+    subject: 'Restablecer Contraseña - MAX Limpieza',
+    html,
+  });
+}
