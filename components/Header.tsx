@@ -111,12 +111,18 @@ export default function Header() {
     return () => window.removeEventListener('userUpdated', checkUser);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Error logging out:', e);
+    }
     localStorage.removeItem('userToken');
     localStorage.removeItem('userData');
     setUser(null);
     setUserMenuOpen(false);
     router.push('/');
+    router.refresh();
   };
 
   const handleSearch = (e: React.FormEvent) => {

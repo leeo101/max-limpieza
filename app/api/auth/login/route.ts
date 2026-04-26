@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,11 +16,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Credenciales inválidas' }, { status: 401 });
     }
     
+    // Set secure HttpOnly cookie
+    const cookieStore = await cookies();
+    cookieStore.set('userToken', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60, // 1 week
+      path: '/',
+    });
+
     return NextResponse.json({ 
       success: true, 
       data: {
         user: result.user, 
-        token: result.token 
+        token: result.token // Keep sending for compatibility
       }
     });
   } catch (error) {

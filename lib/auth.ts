@@ -202,3 +202,21 @@ export async function createUser(email: string, password: string, role = 'admin'
   await db`INSERT INTO users (id, email, password, role) VALUES (${id}, ${email}, ${hashedPassword}, ${role})`;
   return id;
 }
+
+/**
+ * Helper para obtener la sesión del servidor desde las cookies seguras.
+ * Útil para proteger rutas de API.
+ */
+export async function getServerSession() {
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const token = cookieStore.get('adminToken')?.value || cookieStore.get('userToken')?.value;
+    
+    if (!token) return null;
+    return verifyToken(token);
+  } catch (error) {
+    // Si se llama fuera de un entorno de request de Next.js
+    return null;
+  }
+}

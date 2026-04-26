@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { verifyToken, getServerSession } from '@/lib/auth';
 import { randomUUID } from 'crypto';
 
 export async function GET(request: Request) {
@@ -53,17 +53,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado - Debes iniciar sesión para opinar' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
 
     if (!decoded) {
       return NextResponse.json(

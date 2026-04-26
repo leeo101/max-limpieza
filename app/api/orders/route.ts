@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createOrder, getAllOrders, getOrderById, updateOrderStatus, deleteOrder, getStats, getRecentOrders, getLowStockProducts, getDailySalesStats, getTopProducts } from '@/lib/products';
 
 import { sendOrderConfirmationToCustomer, sendOrderNotification } from '@/lib/email';
-import { verifyToken } from '@/lib/auth';
+import { verifyToken, getServerSession } from '@/lib/auth';
 import { orderLimiter } from '@/lib/rateLimit';
 
 export async function GET(request: Request) {
@@ -22,9 +22,9 @@ export async function GET(request: Request) {
       const orderDate = new Date(order.created_at);
       const hoursSinceCreation = (Date.now() - orderDate.getTime()) / (1000 * 60 * 60);
       
-      // Check if user is admin (to allow viewing old orders in detail from admin panel)
-      const authHeader = request.headers.get('authorization');
-      const isAdmin = authHeader && authHeader.startsWith('Bearer ') && verifyToken(authHeader.split(' ')[1])?.role === 'admin';
+      // Check if user is admin
+      const decoded = await getServerSession();
+      const isAdmin = decoded?.role === 'admin';
 
       if (!isAdmin && hoursSinceCreation > 24) {
         return NextResponse.json({ success: false, error: 'Acceso denegado. Este pedido ya no es accesible públicamente.' }, { status: 403 });
@@ -34,13 +34,7 @@ export async function GET(request: Request) {
     }
 
     // Administrative actions (Require Admin Authentication)
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
     if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
@@ -169,14 +163,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
 
     if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -204,14 +191,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
 
     if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

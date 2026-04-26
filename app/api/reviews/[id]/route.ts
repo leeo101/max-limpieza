@@ -1,23 +1,17 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { getServerSession } from '@/lib/auth';
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
     
     // Solo admins
     if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 });
     }
 
-    const id = params.id;
+    const { id } = await params;
     const body = await request.json();
     const { approved } = body;
 
@@ -34,22 +28,16 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
     
     // Solo admins
     if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 });
     }
 
-    const id = params.id;
+    const { id } = await params;
 
     await db`
       DELETE FROM reviews 

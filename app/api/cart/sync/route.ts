@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sql from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { getServerSession } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +40,11 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const decoded = await getServerSession();
+    if (!decoded || decoded.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const carts = await sql`
       SELECT * FROM abandoned_carts 
       WHERE status = 'pending' 

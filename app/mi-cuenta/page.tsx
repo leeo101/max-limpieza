@@ -177,10 +177,16 @@ export default function AccountPage() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Error logging out:', e);
+    }
     localStorage.removeItem('userToken');
     localStorage.removeItem('userData');
     router.push('/');
+    router.refresh();
   };
 
   const getStatusColor = (status: string) => {

@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { verifyToken, getServerSession } from '@/lib/auth';
 import { randomUUID } from 'crypto';
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
     
     // Solo admins
     if (!decoded || decoded.role !== 'admin') {
@@ -32,13 +26,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
     
     if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 });
@@ -78,13 +66,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
     
     if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 });

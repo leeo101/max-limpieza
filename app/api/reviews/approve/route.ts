@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { verifyToken, getServerSession } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
-  const token = authHeader.split(' ')[1];
-  const decoded = verifyToken(token);
+  const decoded = await getServerSession();
 
   if (!decoded || decoded.role !== 'admin') {
     return NextResponse.json(

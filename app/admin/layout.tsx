@@ -25,20 +25,11 @@ export default function AdminLayout({
       return;
     }
 
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      router.push('/admin/login');
-      return;
-    }
-
-    // Verify token and fetch initial stats
+    // Verify session and fetch initial stats
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/orders?action=stats', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        const res = await fetch('/api/orders?action=stats');
         if (res.status === 401) {
-          localStorage.removeItem('adminToken');
           router.push('/admin/login');
         } else {
           const data = await res.json();
@@ -82,10 +73,15 @@ export default function AdminLayout({
     };
   }, [router, pathname, setPendingOrdersCount]);
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Error logging out:', e);
+    }
     localStorage.removeItem('adminToken');
-    document.cookie = 'adminToken=; path=/; max-age=0';
     router.push('/admin/login');
+    router.refresh();
   };
 
   const navItems = [

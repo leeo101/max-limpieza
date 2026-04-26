@@ -28,9 +28,7 @@ export default function AdminLoginPage() {
       const result = await response.json();
 
       if (result.success) {
-        localStorage.setItem('adminToken', result.data.token);
-        // Set cookie so middleware allows access
-        document.cookie = `adminToken=${result.data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
+        // Token is now set via HttpOnly cookie on the server
         router.push('/admin/dashboard');
       } else {
         setError(result.error || 'Credenciales inválidas');

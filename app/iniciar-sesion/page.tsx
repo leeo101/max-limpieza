@@ -29,9 +29,9 @@ export default function LoginPage() {
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.user) {
-          localStorage.setItem('userToken', result.token);
-          localStorage.setItem('userData', JSON.stringify(result.user));
+        if (result.success && result.data.user) {
+          // Token is now set via HttpOnly cookie on the server
+          localStorage.setItem('userData', JSON.stringify(result.data.user));
           
           // Redirect to account page or previous page
           const from = new URLSearchParams(window.location.search).get('from');

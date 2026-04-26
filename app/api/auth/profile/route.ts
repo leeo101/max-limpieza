@@ -1,24 +1,14 @@
 import { NextResponse } from 'next/server';
-import { verifyToken, updateUserProfile } from '@/lib/auth';
+import { verifyToken, updateUserProfile, getServerSession } from '@/lib/auth';
 import db from '@/lib/db';
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado - Token omitido' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
 
     if (!decoded) {
       return NextResponse.json(
-        { success: false, error: 'No autorizado - Token inválido' },
+        { success: false, error: 'No autorizado' },
         { status: 401 }
       );
     }
@@ -44,21 +34,11 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado - Token omitido' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = await getServerSession();
 
     if (!decoded) {
       return NextResponse.json(
-        { success: false, error: 'No autorizado - Token inválido' },
+        { success: false, error: 'No autorizado' },
         { status: 401 }
       );
     }
@@ -81,7 +61,8 @@ export async function PUT(request: Request) {
       );
     }
 
-    const users = await db`SELECT id, role FROM users WHERE id = ${decoded.id}`;
+    // Return the updated basic info (points etc remain the same)
+    const users = await db`SELECT id, email, role, name, phone, address, city, postal_code, points, email_verified, created_at FROM users WHERE id = ${decoded.id}`;
     const user = users[0];
 
     return NextResponse.json({ 
